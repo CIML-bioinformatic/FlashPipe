@@ -36,7 +36,7 @@ The template is structured as follows:
     ├── {{output_name}}/
     │	└── 01_FlashPipe/
     │      ├── 01_zUMIs/			# zUMIS results
-    │		└── {% yield plate_name from plate_names.split(',') %}{{ plate_name }}{% endyield %}
+    │      │	└── {% yield plate_name from plate_names.split(',') %}{{ plate_name }}{% endyield %}
     │      ├── 02_trust4/			# Trust4 results
     │      └── 03_QC/				# QC results
     │      	└── {% yield plate_name from plate_names.split(',') %}{{ plate_name }}{% endyield %}
@@ -63,9 +63,9 @@ The template is structured as follows:
 All the files present in the template must not be deleted or modified manually (If this is the case, then all the previous or future analyses can no longer be carried out, or redone). Here is the details of the files :
 
 - `copier.yml` is the file which will be modified by the pipeline itself to enable the structure to be set up.
-- `{ }}`: dynamic elements substituted by Copy according to `copier.yml`.
+- `{{ }}`: dynamic elements substituted by Copier according to `copier.yml`.
 - `snakefile_copier.yaml` is the snakefile_copier file, is the first snakemake which allows the analysis structure to be launched and produced.
-- `config.yaml.jinja` file which will be modified by Copy, to allocate the info from the user config file, necessary for the QC analysis and the `snakefile.yaml` file.
+- `config.yaml.jinja` file which will be modified by Copier, to allocate the info from the user config file, necessary for the QC analysis and the `snakefile.yaml` file.
 - `snakefile.yaml` is the file used to launch the analysis, and the tools.
 - `experience_name` and `reference_name` etc... define the base path for directories.
 - `plate_names` is a string containing the names of the directories (in a loop) to be created, separated by commas.
