@@ -1,0 +1,41 @@
+
+# Launch command
+#TEMPLATE_PATH=/mnt/DOSI/MASTER_TEMP/CB2M/Project/01_FlashPipe/01_Template
+#snakemake -j 1 --config template_path=${TEMPLATE_PATH} --snakefile "${TEMPLATE_PATH}/{{experience_name}}/{{workflow_name}}/01_snakemake/snakefile_copier.yaml" --use-singularity --singularity-args "-B /mnt:/mnt" --dryrun
+
+import os
+
+# Read the config file to get some parameters
+TEMPLATE_PATH = config[ "template_path"]
+WORKING_DIR = os.getcwd()
+PROJECT_NAME = os.path.basename( os.path.dirname( os.getcwd() ))
+EXPERIENCE_NAME = os.path.basename( os.getcwd() )
+
+print( "TEMPLATE_PATH=" + TEMPLATE_PATH)
+print( "WORKING_DIR=" + WORKING_DIR)
+print( "PROJECT_PATH=" + PROJECT_NAME)
+print( "PROJECT_NAME=" + PROJECT_NAME)
+print( "EXPERIENCE_NAME=" + EXPERIENCE_NAME)
+
+rule all:
+  input:
+  	zUMIs_tool_zip = "02_Container/zUMIs/zUMIS-2.9.7.zip"
+	
+############################################
+# Rule organize_structure
+############################################  
+rule organize_structure:
+  input:
+  	copier_config = TEMPLATE_PATH + "/copier.yml",
+  	user_config = "01_Reference/config_FlashPipe.yml"
+  output:
+  	zUMIs_tool_zip = "02_Container/zUMIs/zUMIS-2.9.7.zip"
+  params: 
+  	template_path = TEMPLATE_PATH,
+  	experience_path = TEMPLATE_PATH + "/\{\{experience_name\}\}",
+  	project_name = PROJECT_NAME,
+  	experience_name = EXPERIENCE_NAME,
+  	working_dir = WORKING_DIR
+  singularity: TEMPLATE_PATH + "/\{\{experience_name\}\}" + "/02_Container/FlashPipe_Copier/FlashPipe_Copier.sif"
+  shell:
+  	"python3 {params.experience_path}/03_Script/01_FlashPipe/00_organizeStructure/create_folder_structure.py --template_path {params.template_path} --working_dir {params.working_dir} --project_name {params.project_name} --experience_name {params.experience_name}" 

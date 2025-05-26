@@ -1,0 +1,142 @@
+### Configuration file for inputs and parameters
+
+#
+# This configuration file is divided into two sections:
+# - the first section is intended for the standard user and contains the parameters that must be provided depending on the analysis required
+# - the second section is intended for the expert user and contains parameters that should only be modified if necessary.
+#
+# Please ensure that you provide accurate and complete information to ensure the correct execution of the pipeline.
+
+
+## ######################################################################
+## ######################################################################
+## User variables - Be sure to provide the right values for your analysis
+## ######################################################################
+## ######################################################################
+
+# 
+# Provide species name
+# Possible values : human or mouse
+# Example: species: mouse
+# ...........................................................
+species: mouse
+
+# 
+# Provide the name of the experiment
+# The value must be a single name
+# Example: experience_name: 250114_VH00228_245_AAGJWKNM5
+# ...........................................................
+experience_name: 250114_VH00228_245_AAGJWKNM5
+
+# 
+# Provide the names of the plates to process
+# The list should be comma separated, without spaces
+# Example: plate_names: P1_H9C0U2GX,P2_H9K0J2WY,P3_H9K0J2W2,P10_H9C0U2GS
+# ...........................................................
+plate_names: P1_H9C0U2GX,P2_H9K0J2WY,P3_H9K0J2W2,P10_H9C0U2GS
+
+# 
+# Provide the type of method used
+# Possible values : single-cell or minibulk
+# Example: method_analysis: single-cell
+# ...........................................................
+method_analysis: single-cell
+
+# 
+# Provide the path to the GSF excel file
+# The path must be an absolute path to the xlsx file
+# Example: gsf_file: /mnt/DOSI/PMLAB/BIOINFO/DATA/Genomics/250114_VH00228_245_AAGJWKNM5/250107_GenomicsSubmissionForm.xlsx
+# ...........................................................
+gsf_file: /mnt/DOSI/PMLAB/BIOINFO/DATA/Genomics/250114_VH00228_245_AAGJWKNM5/250107_GenomicsSubmissionForm.xlsx
+
+# 
+# Indicate of GSF file contains metadata on plates to analyse
+# Possible value for parameter : yes or no
+# Example: metadata_analysis: yes
+# ...........................................................
+metadata_analysis: yes
+
+# 
+# Provide the path to the folder containing the fastq
+# The path must be an absolute path to the folder
+# Example: fastq_directories: /mnt/DOSI/PMLAB/BIOINFO/DATA/Genomics/250114_VH00228_245_AAGJWKNM5/Analysis/1/Data/fastq
+# ...........................................................
+fastq_directories: /mnt/DOSI/PMLAB/BIOINFO/DATA/Genomics/250114_VH00228_245_AAGJWKNM5/Analysis/1/Data/fastq
+
+# 
+# Indicate if BCR and/or TCR repertoire must be analyzed
+# Possible value for both parameters : yes or no
+# Example: bcr_repertoire_analysis: yes
+#          tcr_repertoire_analysis: no
+# ...........................................................
+bcr_repertoire_analysis: yes
+tcr_repertoire_analysis: no
+
+# 
+# Indicate if indexsort data are available for analysis, the path to the data folder if any 
+#  and the header of columns that are not fluorescent measures
+# Possible value for first parameter : yes or no
+# The path for the second parameter must be an absolute path to the folder if exist or void if not
+# The list of header for the third parameter must be a comma separated values of column name present in the indexsort files and that are not
+#   fluorescent measures
+# Example: index_sort_analysis: yes
+#          index_sort: /mnt/DOSI/MASTER_TEMP/CB2M/Test/Flash5Pipe_Training/01_Resource/index_sort
+#          categoriale_term_set : Time,SortPheno,FlowJo_Pheno,Specificity
+# ...........................................................
+index_sort_analysis: yes
+index_sort: /mnt/DOSI/MASTER_TEMP/CB2M/Test/Flash5Pipe_Training/01_Resource/index_sort
+categoriale_term_set : Time,SortPheno,FlowJo_Pheno,Specificity
+
+
+
+## ##################################################################
+## ##################################################################
+## Expert variables - Do not touch if not concerned
+## ##################################################################
+## ##################################################################
+
+# 
+# Path to the reference genome for STAR analysis
+# The path must be an absolute path to the folder containing the reference genome files
+# One value per species must be indicated
+# ...........................................................
+star_index:
+  mouse: /mnt/DOSI/PLATEFORMES/BIOINFORMATIQUE/01_COMMON_DATA/04_TOOLS/Flash-FB5Pseq/ref/refdata-gex-mm10-2020-A/mm10_ERCC92_eYFP_STAR273a_noGTF
+  human: /mnt/DOSI/PLATEFORMES/BIOINFORMATIQUE/01_COMMON_DATA/04_TOOLS/Flash-FB5Pseq/ref/refdata-gex-GRCh38-2020-A/GRCh38_ERCC92_STAR273a_noGTF
+
+# 
+# Path to the annotation genome GFT file
+# The path must be an absolute path to the GFT file of annotations
+# One value per species must be indicated
+# ...........................................................
+gtf_file:
+  mouse: /mnt/DOSI/PLATEFORMES/BIOINFORMATIQUE/01_COMMON_DATA/04_TOOLS/Flash-FB5Pseq/ref/refdata-gex-mm10-2020-A/genes_ERCC92_eYFP.gtf
+  human: /mnt/DOSI/PLATEFORMES/BIOINFORMATIQUE/01_COMMON_DATA/04_TOOLS/Flash-FB5Pseq/ref/refdata-gex-GRCh38-2020-A/genes_ercc92.gtf
+
+# 
+# Path to the reference FASTA file from IMGT
+# The path must be an absolute path to the FASTA file
+# One value per species must be indicated
+# ...........................................................
+trust4_imgt_BCR_TCR :
+  mouse: 01_Reference/00_Experiment/02_IMGT/mouse/GRCm38_bcrtcr.fa
+  human: 01_Reference/00_Experiment/02_IMGT/human/hg38_bcrtcr.fa
+
+# 
+# Path to the FASTA file from IMGT VDJ definition
+# The path must be an absolute path to the FASTA file
+# One value per species must be indicated
+# ...........................................................
+trust4_imgt_VDJ :
+  mouse: 01_Reference/00_Experiment/02_IMGT/mouse/mouse_IMGT+C.fa
+  human: 01_Reference/00_Experiment/02_IMGT/human/human_IMGT+C.fa
+
+# 
+# Path to the temporary directy where zUMIS executable will be copied
+#   and in which zUMIs result will be generated prior to be copied
+#   to the final location
+# The path must be an absolute path to a folder available on the local computer disk 
+#   and accessible from the singularity container
+# ...........................................................
+outdir_temp: /tmp/zUMIs
+

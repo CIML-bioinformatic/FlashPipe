@@ -1,0 +1,102 @@
+###############################################################################
+# This file defines ANALYSIS parameters as global variables that will be loaded
+# before analysis starts. It should define common parameters used by the current
+# analysis
+#
+
+######## CONSTANTS ON THE ANALYSIS STEP IDENTITY
+######## Modify the ANALYSIS_STEP_NAME and LITERAL_TITLE variable
+
+# This is the literal title of the analysis step. It will be shown at the beginning
+# of the HTML report
+# Example : LITERAL_TITLE = "Quality Control, normalization and clustering"
+LITERAL_TITLE = "Quality control of FlashPipe"
+
+# This is the name of the analysis step. Use the same name as the folder
+# name of the analysis step
+# Example : ANALYSIS_STEP_NAME = "02_GlobalHeterogeneity"
+ANALYSIS_STEP_NAME = "03_QC"
+
+# Initialize an error list
+error_intialisation <- c()
+
+# This is the path to the analysis step output folder. It will be automatically
+# created at first analysis launch
+PATH_ANALYSIS_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, ANALYSIS_STEP_NAME)
+if (PATH_ANALYSIS_OUTPUT == ""){
+  error_intialisation <- c(error_intialisation, "\nERROR : Path to 03_QC in R is empty (PATH_ANALYSIS_OUTPUT) ")
+}
+PATH_ZUMIS_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, "01_zUMIs")
+if (PATH_ZUMIS_OUTPUT == ""){
+  error_intialisation <- c(error_intialisation, "\nERROR : Path to the zUMIs output directory (01_zUMIs) in R is empty (PATH_ZUMIS_OUTPUT)")
+}
+PATH_EXPERIMENT = file.path( PATH_EXPERIMENT_REFERENCE, "00_Experiment")
+if (PATH_EXPERIMENT == ""){
+  error_intialisation <- c(error_intialisation, "\nERROR : Path to the experiment directory (00_experiment) in R is empty (PATH_EXPERIMENT)")
+}
+PATH_WELL_BARCODE_FILE = file.path( PATH_EXPERIMENT, "cell_barcode_well.csv")
+if (PATH_WELL_BARCODE_FILE == ""){
+  error_intialisation <- c(error_intialisation, "\nERROR : Path to cell_barcode file in R is empty (PATH_WELL_BARCODE_FILE)")
+}
+PATH_ERCC_CONCENTRATION = file.path( PATH_EXPERIMENT, "ERCC_concentration.csv")
+if (PATH_ERCC_CONCENTRATION == ""){
+  error_intialisation <- c(error_intialisation, "\nERROR : Path to the ERCC_concentration file in R is empty (PATH_ERCC_CONCENTRATION)")
+}
+PATH_GSF = "{{gsf_file}}"
+if (PATH_GSF == ""){
+  error_intialisation <- c(error_intialisation, "\nERROR : Path to GSF in R is empty (PATH_GSF)")
+}
+PATH_CONFIG_FILE = file.path( PATH_EXPERIMENT_REFERENCE, "Config_FlashPipe.yml")
+if (PATH_CONFIG_FILE == ""){
+  error_intialisation <- c(error_intialisation, "\nERROR : Path to user config file (Config_FlashPipe.yml) in R is empty (PATH_CONFIG_FILE)")
+}
+CONFIG_FILE_YAML = yaml::yaml.load_file(PATH_CONFIG_FILE)
+
+PATH_TRUST4_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, "02_trust4")
+if (PATH_TRUST4_OUTPUT == ""){
+  error_intialisation <- c(error_intialisation, "\nERROR : Path to Trust4 output directory (02_trust4) in R is empty (PATH_TRUST4_OUTPUT)")
+}
+
+######## CONSTANTS USED BY THE ANALYSIS STEP
+######## Add here all the constants required for the analysis
+ATTOMOLE_TO_MOLECULE =  602214.1499989164
+UL_BY_WELL = 2.5e-8
+
+# Take value for categorial column name for the analysis
+if ( !is.null(CONFIG_FILE_YAML$categoriale_term_set)){
+  categorial_term_set_list = gsub( " ", "", strsplit( CONFIG_FILE_YAML$categoriale_term_set[[1]], fixed= TRUE, split = ",")[[1]])
+  CATEGORIAL_TERM_SET = as.vector(unlist(categorial_term_set_list))
+  if (length(CATEGORIAL_TERM_SET) <= 1){
+    error_intialisation <- c(error_intialisation, "\nERROR : The column names in CATEGORIAL_TERM_SET are empty in R")
+  }
+  rm(categorial_term_set_list)
+}
+
+# Params for analysis
+METHOD = "{{method_analysis}}"
+INDEXSORT = {{index_sort_analysis}}
+BCR = {{bcr_repertoire_analysis}}
+TCR = {{tcr_repertoire_analysis}}
+METADATA = {{metadata_analysis}}
+
+WELL_ID = "WellID"
+PLATE_NAME = "Plate_Name"
+STATISTIC = "Statistic"
+CELL_ID = "cell_id"
+
+# Params for TRUST4
+C_CALL = "c_call"
+V_CALL = "v_call"
+J_CALL = "j_call"
+PRODUCTIVE = "productive"
+
+GENERAL_COLOR_PANEL = c("#65c44f", "#7c64d4", "#abb739", "#d43c55", "#3fc1bf", "#c050b5", "#5e9dd7", "#d59d69", "#d5542e", "#6e6fb9", "#d59a35", "#737027",
+                        "#4b8138", "#4e9830", "#9e5c2a", "#cf89c5", "#99aa5e", "#cd6f6d", "#39855f", "#ba497a", "#5ec287")
+
+# Display errors if any were found 
+if (length(error_intialisation) > 0) {
+  cat("\n••••• ERROR DETECTED IN SETUP R (Analysis Params)•••••\n")
+  cat(error_intialisation, "\n")
+  stop("Some error has been detecting. Stop analysis")
+}
+rm(error_intialisation)

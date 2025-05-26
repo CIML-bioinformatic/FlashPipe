@@ -1,0 +1,24 @@
+template_path: {{ template_path }}
+project_name: {{ project_name }}
+experience_name: {{ experience_name }}
+zUMIS_outdir: {{ outdir_temp }}
+plate_names: {{ plate_names }}
+barcode_file: {{ barcode_file }}
+trust4_imgt_VDJ: {{ trust4_imgt_VDJ }}
+trust4_imgt_BCR_TCR: {{ trust4_imgt_BCR_TCR }}
+
+method: {{method_analysis}}
+index_sort_analysis: {{index_sort_analysis}}
+bcr_repertoire_analysis: {{bcr_repertoire_analysis}}
+tcr_repertoire_analysis: {{tcr_repertoire_analysis}}
+
+fastq_read1:
+{% for plate in plate_names.split(',') %}  
+  {{ plate }}: {{ fastq_files_read1.split(',')[loop.index0] }}
+{% endfor %}
+
+fastq_read2:
+{% for plate in plate_names.split(',') %}
+  {{ plate }}: {{ fastq_files_read2.split(',')[loop.index0] }}
+{% endfor %}
+

@@ -1,0 +1,140 @@
+
+#snakemake -j 1 --snakefile 04_Workflow/01_snakemake/snakefile.yaml --use-singularity --singularity-args "-B /mnt:/mnt -B /tmp:/tmp" --dryrun
+
+configfile: "04_Workflow/01_snakemake/config.yaml"
+
+##############################################
+# Read the config file to get some parameters
+##############################################
+PROJECT_NAME = config[ "project_name"]
+EXPERIENCE_NAME = config[ "experience_name"]
+PLATE_NAME_LIST = config[ "plate_names"].split(",")
+
+METHOD = config[ "method"]
+INDEX_SORT_ANALYSIS = config[ "index_sort_analysis"]
+BCR_ANALYSIS = config[ "bcr_repertoire_analysis"]
+TCR_ANALYSIS = config[ "tcr_repertoire_analysis"]
+
+print( "PROJECT NAME=", str( PROJECT_NAME))
+print( "EXPERIENCE NAME=", str( EXPERIENCE_NAME))
+print( "PLATE NAMES=", str( PLATE_NAME_LIST))
+
+############################################
+# Define functions for rules
+############################################
+
+# Provide the input files for the QC analysis according to the user requirements
+def get_qc_input_files( wildcards):
+
+  input_files = []
+  
+  # Add the files from zUMIS output
+  count_table = expand( "05_Output/01_FlashPipe/01_zUMIs/{plate_name}/zUMIs_output/expression/{plate_name}.dgecounts.rds", plate_name = PLATE_NAME_LIST)
+  gene_mapping = expand( "05_Output/01_FlashPipe/01_zUMIs/{plate_name}/zUMIs_output/expression/{plate_name}.gene_names.txt", plate_name = PLATE_NAME_LIST)
+  input_files = input_files + count_table
+  input_files = input_files + gene_mapping
+    
+  # Add the files from TRUST4 output if required
+  if BCR_ANALYSIS or TCR_ANALYSIS:
+    trust4_airr_files = expand( "05_Output/01_FlashPipe/02_trust4/{plate_name}/{plate_name}_barcode_airr.tsv", plate_name = PLATE_NAME_LIST)
+    input_files = input_files + trust4_airr_files
+      
+    # Add the files of indexsort data if required
+  if INDEX_SORT_ANALYSIS:   
+    indexsort_files = expand( "00_RawData/01_IndexSort/{plate_name}_indexsort.csv", plate_name = PLATE_NAME_LIST)
+    input_files = input_files + indexsort_files
+
+
+  print( str( input_files))
+  # Return the list of input files for QC analysis
+  return input_files
+
+# Provide the Fastq Read 1 file according to the plate name
+def getFastq1(wildcards):
+  return config["fastq_read1"][wildcards.plate_name]
+
+# Provide the Fastq Read 2 file according to the plate name
+def getFastq2(wildcards):
+  return config["fastq_read2"][wildcards.plate_name]
+
+############################################
+# Rule all
+############################################
+rule all:
+  input: "05_Output/01_FlashPipe/03_QC/" + PROJECT_NAME + "_" + EXPERIENCE_NAME + "_03_QC.html"
+
+############################################
+# Rule QC
+############################################
+rule QC:
+  input: 
+    get_qc_input_files
+  output : "05_Output/01_FlashPipe/03_QC/" + PROJECT_NAME + "_" + EXPERIENCE_NAME + "_03_QC.html"
+  singularity : "02_Container/FlashPipe_QC/FlashPipe_QC.sif"
+  shell:
+    '''
+    Rscript 03_Script/01_FlashPipe/03_QC/launch_reports_compilation.R
+    '''
+
+############################################
+# Rule zUMIS
+############################################
+rule zUMIs:
+  input: 
+    config_zUMIs = "01_Reference/01_zUMIs/{plate_name}/{plate_name}.yaml",
+    zUMIs_tool = "/tmp/zUMIs/zUMIs-2.9.7/zUMIs.sh"
+  output: 
+    count_table = "05_Output/01_FlashPipe/01_zUMIs/{plate_name}/zUMIs_output/expression/{plate_name}.dgecounts.rds",
+    gene_mapping = "05_Output/01_FlashPipe/01_zUMIs/{plate_name}/zUMIs_output/expression/{plate_name}.gene_names.txt"
+  params: 
+    zUMIs_outdir = config["zUMIS_outdir"]
+  shell:
+    '''
+    /tmp/zUMIs/zUMIs-2.9.7/zUMIs.sh -c -y {input.config_zUMIs}
+    cp -rf {params.zUMIs_outdir}/{wildcards.plate_name} 05_Output/01_FlashPipe/01_zUMIs/
+    '''
+
+############################################
+# Rule copy_zUMIS
+############################################    
+rule copy_zUMIS:
+  input:
+    zUMIs_tool_zip = "02_Container/zUMIs/zUMIs-2.9.7.zip"
+  output:
+    zUMIs_tool = "/tmp/zUMIs/zUMIs-2.9.7/zUMIs.sh"
+  shell:
+    '''
+    rm -rf /tmp/zUMIs/zUMIs-main
+    rm -rf /tmp/zUMIs/zUMIs-2.9.7
+    mkdir -p /tmp/zUMIs
+    unzip {input.zUMIs_tool_zip} -d /tmp/zUMIs
+    mv -T /tmp/zUMIs/zUMIs-main /tmp/zUMIs/zUMIs-2.9.7
+    chmod -R 755 /tmp/zUMIs/zUMIs-2.9.7
+    '''
+
+############################################
+# Rule trust4
+############################################ 
+rule trust4:
+  input:
+    fastq1 = getFastq1,
+    fastq2 = getFastq2
+  output:
+    "05_Output/01_FlashPipe/02_trust4/{plate_name}/{plate_name}_barcode_airr.tsv"
+  singularity:
+    "02_Container/TRUST4/ccbr_trust4_1.0.7b.sif"
+  params:
+    reference_bcrtcr=config["trust4_imgt_BCR_TCR"],
+    reference_vdj=config["trust4_imgt_VDJ"],
+    BARCODE=config["barcode_file"]
+  shell:
+    '''
+    run-trust4 -f {params.reference_bcrtcr} -t 24 --ref {params.reference_vdj} \
+    -u {input.fastq1} \
+    --barcode {input.fastq2} \
+    --barcodeRange 0 7 + \
+    --barcodeWhitelist {params.BARCODE} \
+    --UMI {input.fastq2} --umiRange 8 15 + \
+    -o {wildcards.plate_name} --od `dirname {output}` --repseq
+    '''
+

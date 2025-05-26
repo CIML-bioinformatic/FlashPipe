@@ -1,0 +1,104 @@
+---
+author: "Drystan Thyarion"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    theme: yeti
+    highlight: espresso
+    toc: true
+    toc_float: false
+    toc_depth: 2
+---
+
+
+```{r rmd_setKnitrOptions, include=FALSE}
+# Set hook for PNG optimization ('optipng' must be installed on system)
+#knitr::knit_hooks$set(optipng = knitr::hook_optipng)
+
+# Set chunks default options
+knitr::opts_chunk$set(results='asis',
+                      echo = FALSE,           # Do not show chunks code
+                      message = FALSE,        # Hide R regular text output in reports
+                      warning = FALSE,        # Show warning messages
+                      error = FALSE,          # Do not stop generating report on errors
+                      cache = FALSE,          # Disable chunk result caching
+                      cache.comments = FALSE, # Changing comments does not invalidate cache
+                      fig.dim = c(5, 5),      # Size of device for R figures
+                      autodep = TRUE,         # Automatic chunk dependencies if cache enabled
+                      optipng = '-o2');       # PNG optimization level (2=default, 5=slow, 7=very slow)
+```
+
+
+```{r rmd_loadDependencies, warning=FALSE, cache = FALSE}
+### Load libraries, global functions/variables, and chunks
+source( file.path( WORKING_DIR, "00_generalDeps.R"));
+```
+
+```{r rmd_init_report, child = 'Report_Init.Rmd'}
+```
+
+```{r rmd_loadChunks, warning=FALSE, cache = FALSE}
+read_chunk( path=file.path( WORKING_DIR, "01_prepareData.R"));
+read_chunk( path=file.path( WORKING_DIR, "02_formatCountTable.R"));
+read_chunk( path=file.path( WORKING_DIR, "03_computeERCCUMIPercent.R"));
+read_chunk( path=file.path( WORKING_DIR, "04_computeERCCAccuracy.R"));
+read_chunk( path=file.path( WORKING_DIR, "05_computeRNAUMI.R"));
+read_chunk( path=file.path( WORKING_DIR, "06_computeFeatureNumber.R"));
+read_chunk( path=file.path( WORKING_DIR, "07_computeIndexSort.R"));
+read_chunk( path=file.path( WORKING_DIR, "08_displayMetaData.R"));
+read_chunk( path=file.path( WORKING_DIR, "09_computeTrust4BCR.R"));
+read_chunk( path=file.path( WORKING_DIR, "10_computeTrust4TCR.R"));
+read_chunk( path=file.path( WORKING_DIR, "90_finalizeSession.R"));
+```
+
+---
+title: `r paste( GLOBAL_DESCRIPTION, EXPERIMENT_NAME, LITERAL_TITLE, sep ="<BR>")`
+---
+
+# Data loading
+```{r rmd_prepare_data, warning = TRUE, fig.dim = c(9,6)}
+<<prepare_data>>
+```
+
+```{r rmd_format_count_table, warning = TRUE, fig.dim = c(9,6)}
+<<format_count_table>>
+```
+
+# Data analysis {.tabset .tab-fade}
+
+## ERCC {.tabset .tab-fade}
+
+### ERCC UMI {.tabset .tab-fade}
+```{r rmd_compute_ERCC_UMI_percent, warning = FALSE, fig.dim = c(9,6)}
+<<compute_ERCC_UMI_percent>>
+```
+
+### ERCC accuracy {.tabset .tab-fade}
+```{r rmd_compute_ercc_accuracy, warning = FALSE, fig.dim = c(9,6)}
+<<compute_ERCC_accuracy>>
+```
+
+## RNA {.tabset .tab-fade}
+
+### RNA UMI {.tabset .tab-fade}
+```{r rmd_compute_rna_umi, warning = TRUE, fig.dim = c(9,6)}
+<<compute_RNA_UMI>>
+```
+
+### RNA features {.tabset .tab-fade}
+```{r rmd_compute_feature_number, warning = TRUE, fig.dim = c(9,6)}
+<<compute_Feature_Number>>
+```
+
+```{r rmd_compute_index_sort, warning = TRUE, fig.dim = c(9,6)}
+<<compute_index_sort>>
+```
+
+```{r rmd_display_metadata, warning = TRUE, fig.dim = c(9,6)}
+<<display_metadata>>
+```
+
+```{r rmd_compute_Trust4, warning = TRUE, fig.dim = c(9,6)}
+<<computeTrust4_bcr>>
+<<computeTrust4_tcr>>
+```

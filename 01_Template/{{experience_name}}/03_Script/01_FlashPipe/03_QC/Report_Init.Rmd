@@ -1,0 +1,126 @@
+
+
+<!-- THIS RMARDOWN FILE CONTAINS INITIALIZATION OF SERIES OF ELEMENTS FOR THE REPORT
+     IT ALSO DISPLAY IN THE REPORT DETAILS ON THE RUNNING ENVIRONMENT
+     
+     DO NOT MODIFY THIS FILE IF YOU ARE NOT A RMARKDWON EXPERT
+-->
+
+
+<!-- Javascript for zooming on figures (adapted from: https://stackoverflow.com/questions/40401680) -->
+<!-- Jquery import conflicts with DT::datatable so needs to be commented here -->
+<!-- <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script> -->
+
+<style>
+.zoomDiv {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  z-index: 50;
+  transform: translate(-50%, -50%);
+  background-color: #FFFFFF;
+  box-shadow: 0px 0px 50px #888888;
+  width: fit-content;
+  max-width: 90%;
+  max-height: 90%;
+  overflow: auto;
+}
+
+.zoomImg {
+  width: 100%;
+}
+</style>
+
+<script type="text/javascript">
+  $(document).ready(function() {
+    $('body').prepend("<div class=\"zoomDiv\"><img src=\"\" class=\"zoomImg\"></div>");
+    // onClick for all img except the zoomed one and link ones (filter)
+    // use 'img.zoom' and out.extra='class=\"zoom\"' in chunk to specify manually which chunk images can be zoomed
+    $('img:not(.zoomImg)').filter(':not(a *)').click(function() {
+      $('.zoomImg').attr('src', $(this).attr('src'));
+      $('.zoomDiv').show();
+    });
+    // onClick function for hiding div
+    $('img.zoomImg').click(function() {
+      $('.zoomDiv').hide();
+    });
+  });
+</script>
+
+
+
+
+```{r rmd_initFunctions}
+
+### Create output directory
+dir.create( PATH_ANALYSIS_OUTPUT, showWarnings = FALSE);
+
+
+### Record starting time (for report and file names)
+startTime = Sys.time();
+startTimeReport   = format( startTime, "%Y %m %d %H:%M:%S")
+startTimeFileName = format( startTime, "%Y_%m_%d_%H_%M_%S")
+
+
+### Initialize utils
+
+# Create a hash for all parameters
+paramsHash = digest( environment(), algo="murmur32");
+
+# Create a hidden plotly in a tagList to allow using them in loops later
+cat('<div style="display: none">');
+htmltools::tagList(plotly::plot_ly(x = rnorm(10), type = "histogram"))
+cat('</div>');
+
+# Same for datatable....
+cat('<div style="display: none">');
+datatable( data.frame(a=1:10, b = 1:10),
+           class = "compact",
+           filter="top",
+           rownames = FALSE,
+           #colnames = ,
+           #caption = ,
+           extensions = c('Buttons', 'Select'))
+cat('</div>');
+
+```
+
+
+---
+title: `r paste( GLOBAL_DESCRIPTION, ANALYSIS_STEP_NAME, sep ="<BR>")`
+---
+
+
+## Run informations {.tabset .tabset-fade}
+
+### Run
+<center>
+```{r rmd_runInfo_run}
+pander( c( 'Date'     = startTimeReport,
+           'Sample'   = EXPERIMENT_NAME,
+           'Hash'     = paramsHash));
+```
+</center>
+
+### Parameters
+```{r rmd_runInfo_params}
+listParams = as.list( paramsEnv);
+pander(listParams[order(names(listParams))]); # Show params in alphabetical order
+```
+
+### System
+<center>
+```{r rmd_runInfo_sysInfo}
+showSimpleDT( Sys.info())
+```
+</center>
+
+### R
+```{r rmd_runInfo_r}
+pander( sessionInfo());
+```
+
+<!-- Ending the tabset section -->
+<!-- ## {.toc-ignore} -->
+<br /><br />

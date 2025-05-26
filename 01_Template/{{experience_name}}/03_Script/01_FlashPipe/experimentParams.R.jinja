@@ -1,0 +1,48 @@
+###############################################################################
+# This file defines PROJECT parameters as global variables that will be loaded
+# before analysis starts. It should define common parameters shared by several
+# samples and several analysis steps
+###############################################################################
+
+
+#### General
+#### Variables that contains general information on the experiment
+
+# The experiment name this file is in
+# It must be the same name as the name of the experiment folder you defined
+# Example : "10x_190712_m_moFluMemB"
+#EXPERIMENT_NAME = basename( dirname( WORKING_DIR))
+EXPERIMENT_NAME = "{{experience_name}}"
+
+
+#### Automatic definition of path
+#### You may not modify the following section where standard path are defined in
+#### constants so to be used in your code. Have a look at the declared variable
+#### and use it in your code.
+
+#### Input / Output
+
+# This is the path of the current experiment this file is in
+PATH_EXPERIMENT = file.path( PATH_PROJECT, EXPERIMENT_NAME)
+
+# Those are the path to the main folder : RAW data, REFERENCE data and Output of analysis
+PATH_EXPERIMENT_RAWDATA   = file.path( PATH_EXPERIMENT, "00_RawData")
+PATH_EXPERIMENT_REFERENCE = file.path( PATH_EXPERIMENT, "01_Reference")
+PATH_EXPERIMENT_OUTPUT    = file.path( PATH_EXPERIMENT, "05_Output")
+PATH_FLASHPIPE_OUTPUT     = file.path( PATH_EXPERIMENT_OUTPUT, "01_FlashPipe")
+
+
+# Create a 'safe' unique prefix for output files
+outputFilesPrefix = paste0( SCIENTIFIC_PROJECT_NAME, "_",     
+                            EXPERIMENT_NAME
+                            )
+
+
+
+#### Debug
+
+.SHOWFLEXBORDERS = FALSE;
+.VERBOSE = FALSE;
+
+
+
