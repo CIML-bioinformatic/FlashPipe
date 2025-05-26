@@ -2,127 +2,78 @@
 Pipeline for analysis if FlashFB5p-seq data
 
 **Auteur** : Drystan THYARION (drystan.thyarion@gmail.com)
+
 **Contact** : Lionel SPINELLI (lionel.spinelli@univ-amu.fr)
 
 ---
 
-## Objectif
+## Objective
 
-Ce document décrit l’utilisation et la structure du pipeline d’analyse **FlashFB5p-seq**, basé sur **Snakemake** et utilisant des containers **Singularity**. Il est destiné à faciliter la mise en place, l'exécution et la compréhension du pipeline pour le traitement des données sortant du FlashFB5p-seq.
-
----
-
-## Lancement du pipeline
-
-### Étape 0 : Initialisation
-
-1. Copier le contenue du dossier `02_Config` dans un nouveau répertoire.
-2. Renommer `PROJECT_NAME` et `EXPERIMENT_NAME` avec les noms respectivement du projet de l'expérience à analyser
-3. Dans `01_Reference`, modifier le fichier `config_FlashPipe.yml` :
-   - Noms des plaques
-   - Mode (single-cell / mini-bulk)
-   - Présence ou non de BCR/TCR
-   - Chemins vers les fichiers FASTQ, FACS, GSF
-   - Espèce (human / mouse)
-
-### Étape 1 : Génération de la structure (Copier)
-
-1. Se positionner dans EXPERIMENT_NAME.
-
-2. Créer un environnement virtuel :
-```
-virtualenv <NOM_ENVIRONNEMENT_VIRTUEL>
-source <NOM_ENVIRONNEMENT_VIRTUEL>/bin/activate
-pip install snakemake
-pip install pulp==2.7.0
-```
-
-3. Lancer la commande : 
-```
-TEMPLATE_PATH=/mnt/DOSI/MASTER_TEMP/CB2M/Project/01_FlashPipe/01_Template
-```
-
-4. Lancer la commande : 
-```
-snakemake -j 1 --config template_path=${TEMPLATE_PATH} --snakefile "${TEMPLATE_PATH}/{{experience_name}}/{{workflow_name}}/01_snakemake/snakefile_copier.yaml" --use-singularity --singularity-args "-B /mnt:/mnt" --dryrun
-```
-
-5. Lancer la commande sans --dryrun, si aucune erreur n'est présente.
-
-### Étape 2 : Utilisation des outils et générations de l'analyse QC
-
-ATTENTION : Cette étape execute des calculs importants. Elle doit être executée sur un serveur de calcul.
-
-Pour lancer les outils et l'analyse QC :
-
-1. Se positionner dans EXPERIMENT_NAME.
-2. Lancer la commande :
-```
-snakemake -j 1 --snakefile 04_Workflow/01_snakemake/snakefile.yaml --use-singularity --singularity-args "-B /mnt:/mnt -B /tmp:/tmp" --dryrun
-```
-3. Lancer la commande sans --dryrun, si aucune erreur n'est présente.
+This document describes the use and structure of the **FlashFB5p-seq** analysis pipeline, based on **Snakemake** and using **Singularity** containers. It is intended to make it easier to set up, run and understand the pipeline for processing data output from FlashFB5p-seq.
 
 ---
 
-## Fonctionnement du pipeline d'analyse de la technique de FlashFB5p-seq.
+## How FlashPipe works
 
-### Structure du Projet
-Le répertoire Template sert de base pour générer une nouvelle expérience via l'outil **Copier**. 
-Ne modifiez **aucun fichier manuellement**, sous peine de ne plus être en capacité de reproduire les analyses passées ou futures.
+### Project structure
 
-Le template sera copié, auquel celui sera appliqué des modifications mais sinon d'origine il est structuré de la manière suivante :
+FlashPipe use a specific folder structure to execute all analysis. For simplicity, this file structure is automatically generated
+from the information the user provides in a config file. To do so, a template of the structure of files has been defined. This template contains folders, files and content of files that are generic names that will be customised at the generation of the new structure from the user provided information.
+
+The Template directory is used as a basis for generating a new structure using the **Copier** tool. 
+Do not modify **any file manually**, otherwise you will no longer be able to reproduce past or future analyses.
+
+The template is structured as follows:
 
 ```
 01_Template/
-├── copier.yml                       # Configuration pour Copier
+├── copier.yml					# Configuration for Copier
 ├── README.md
 └── {{experience_name}}/
-    ├── 02_Container/                # Fichiers Singularity (.sif) nécessaires
+    ├── 02_Container/				# Singularity images files (.sif)
     ├── 03_Script/
-    │	└── 01_FlashPipe/            # Fichier des scripts pour la structure du projet et de l'analyse du QC
+    │	└── 01_FlashPipe/			# Script file for project structure and QC analysis
     ├── {{output_name}}/
     │	└── 01_FlashPipe/
-    │      ├── 01_zUMIs/
-    		└── {% yield plate_name from plate_names.split(',') %}{{ plate_name }}{% endyield %}
-    │      ├── 02_trust4/                        # Résultats Trust4
-    │      ├── 03_QC/
-    		└── {% yield plate_name from plate_names.split(',') %}{{ plate_name }}{% endyield %}
-    │      └── 04_Analysis/                     # Analyse finale
+    │      ├── 01_zUMIs/			# zUMIS results
+    │		└── {% yield plate_name from plate_names.split(',') %}{{ plate_name }}{% endyield %}
+    │      ├── 02_trust4/			# Trust4 results
+    │      └── 03_QC/				# QC results
+    │      	└── {% yield plate_name from plate_names.split(',') %}{{ plate_name }}{% endyield %}
     ├── {{rawdata_name}}/
-    │   ├── 00_RNA/                  # FASTQ symboliques
-    │   └── 01_IndexSort/            # Données de FACS
+    │   ├── 00_RNA/                  		# Symbolic links to FASTQ files
+    │   └── 01_IndexSort/            		# Files of indexsort data
     ├── {{workflow_name}}/
     │	└── 01_snakemake/
-    │      ├── config.yaml.jinja        # Fichier config pour le snakefile.yaml
-    │      ├── snakefile.yaml           # Pipeline principal
-    │      └── snakefile_copier.yaml    # Génération de la structure
+    │      ├── config.yaml.jinja        	# Config file for main snakemake workflow
+    │      ├── snakefile.yaml           	# Main snakemake workflow
+    │      └── snakefile_copier.yaml    	# Snakemake workflow for files structure génération
     └── {{reference_name}}/
         ├── 00_Experiment/
-        │	├── 02_IMGT/				# Références Trust4 (BCR/TCR)
+        │	├── 02_IMGT/			# Reference files for Trust4 (BCR/TCR)
         │	├── cell_barcode_well.csv
         │	└── ERCC_concentration.csv                
-        ├── 01_zUMIs/
+        ├── 01_zUMIs/				# Config files for zUMIs execution
         │    └── {% yield plate_name from plate_names.split(',') %}{{ plate_name }}{% endyield %}
         │    	└── {{plate_name}}.yaml.jinja
         └── 02_trust4/
 ```
 
-#### À noter : 
-L'ensemble des fichiers présents dans le template ne doivent pas être supprimer ou modifier manuellement !!!!! (Si c'est le cas, alors, toutes les analyses précédentes ou futur ne pourront plus être faites, ou refaites).
-- `copier.yml` est le fichier qui sera modifié par le pipeline lui même pour permettre de mettre en place la structure.
-- `{{ }}` : éléments dynamiques substitués par Copier selon `copier.yml`.
-- `snakefile_copier.yaml` est le fichier snakefile_copier, est le premier snakemake qui permet de lancer et de produire la strucutre de l'analyse.
-- `config.yaml.jinja` fichier qui sera modifier par Copier, pour attribué les infos du fichier de config utilisateur, nécéssaire pour l'analyse QC et le fichier `snakefile.yaml`
-- `snakefile.yaml` est le fichier qui permet de lancer l'analyse, et les outils.
-- `experience_name` et `reference_name` etc... définissent le chemin de base pour les répertoires.
-- `plate_names` est une chaîne de caractères contenant les noms des répertoires (en boucle) à créer, séparés par des virgules.
-- `{% yield plate_name from plate_names.split(',') %}{{ plate_name }}{% endyield %}` permet de parcourir la liste `plate_names` pour créer les répertoires contenant le nom de chacune des plaques.
-- `02_IMGT` contient les informations nécéssaire à l'outils Trust 4 (ce sont les genomes) pour permettre d'obtenir des infos sur les BCR et TCR.
-- `{{plate_name}}.yaml.jinja` est le fichier qui sera modifier pour chaque plaque fournis, permettant à zUMIs de lire ces fichiers pour lancer les outils.
+#### Please note: 
+All the files present in the template must not be deleted or modified manually (If this is the case, then all the previous or future analyses can no longer be carried out, or redone). Here is the details of the files :
 
-Le répertoires 02_Config, contiens les répertoires nécéssaire et initiaux pour lancer le pipeline (il suffit de copier le répertoires, en remplaçant les noms et le fichier config pour pouvoir lancer le code) :
+- `copier.yml` is the file which will be modified by the pipeline itself to enable the structure to be set up.
+- `{ }}`: dynamic elements substituted by Copy according to `copier.yml`.
+- `snakefile_copier.yaml` is the snakefile_copier file, is the first snakemake which allows the analysis structure to be launched and produced.
+- `config.yaml.jinja` file which will be modified by Copy, to allocate the info from the user config file, necessary for the QC analysis and the `snakefile.yaml` file.
+- `snakefile.yaml` is the file used to launch the analysis, and the tools.
+- `experience_name` and `reference_name` etc... define the base path for directories.
+- `plate_names` is a string containing the names of the directories (in a loop) to be created, separated by commas.
+- `{% yield plate_name from plate_names.split(“,”) %}{{ plate_name }}{% endyield %}` allows you to browse the `plate_names` list to create directories containing the name of each plate.
+- `02_IMGT` contains the information required by the Trust 4 tools (these are the genomes) to obtain information about BCR and TCR.
+- `{{plate_name}}.yaml.jinja` is the file that will be modified for each plate supplied, enabling
 
----
+The `02_Config` directory contains the necessary and initial directories to launch the pipeline (simply copy the directory, replacing the names and the config file to be able to launch the code):
 
 ```
 02_Config/
@@ -132,28 +83,25 @@ Le répertoires 02_Config, contiens les répertoires nécéssaire et initiaux po
             └── config_FlashPipe.yml
 ```
 
-Pour la deuxième strucutre, je ne vais pas ré ecrire en détail toute les infos car certaines sont cités dans la précédentes strucutre. Cependant, voici les informations obtenus après que le pipeline fut lancer et terminé.
-Nous prendrons comme exemple ici N plaques (sachant que N représente un ensemble de plaque possible) :
+We'll take N plates as an example (knowing that N represents a set of possible plates):
+
+##### Note 
+It is important to bear in mind that the tree structure presented is the one with all the options enabled. If some options are not activated, some results will be missing. -
+- **Single-cell mode**: All analyses (zUMIs, FACS, Trust4) are active.
+- **Mini Bulk mode**: FACS analysis disabled.
+- If **BCR/TCR** are disabled, Trust4 folders will be empty (without errors).
 
 ---
 
-##### Remarque 
-Il est important de prendre en compte, que l'arborescence présenter est celle qui possède l'ensemble des options activent. Si certaines options ne sont pas activé alors des résultats seront manquant. -
-- **Mode Single-cell** : Toutes les analyses (zUMIs, FACS, Trust4) sont actives.
-- **Mode Mini Bulk** : Analyse FACS désactivée.
-- Si BCR/TCR sont désactivés, les dossiers Trust4 seront vides (sans erreur).
-
----
-
-### Structure Générée par le Pipeline
+### File structure generated by FlashPipe using the user provided information
 
 ```
 .../
 PROJECT_NAME/
     └── EXPERIMENT_NAME/
     	├── 00_RawData/
-    	│   ├── 00_RNA/                 # Liens symboliques vers les FASTQ (Read 1 et 2) pour toutes les plaques renseignées.
-    	│   └── 01_IndexSort/           # Fichiers FACS par plaque
+    	│   ├── 00_RNA/                 
+    	│   └── 01_IndexSort/           
     	├── 01_Reference/
     	│   ├── 00_Experiment/
     	│   ├── 01_zUMIs/
@@ -164,7 +112,7 @@ PROJECT_NAME/
     	├── 02_Container/
     	├── 03_Script/
     	├── 04_Workflow/
-    	│   ├── config.yaml            # Fichier modifier par Copier avec les éléments rentrés dans le fichier de config (config_FlashPipe.yml) de l'utilisateur
+    	│   ├── config.yaml            
     	│   ├── snakefile.yaml
     	│   └── snakefile_copier.yaml
     	└── 05_Output/
@@ -183,20 +131,100 @@ PROJECT_NAME/
         	│   ├── <PROJECT_NAME>_<EXPERIMENT_NAME>_03_QC.html
         	│   ├── Graphiques globaux de l'analyse QC (multi-plaques)
         	│   └── Plate_N/
-        	│       ├── Multiples fichiers *.csv provenant de zUMIs retravailler et modifier (mis au propre)
-        	│       ├── Multiples graphiques pour chacune des plaques (dans notre cas N)
+        	│       ├── Multiples *.csv files from zUMIs output
+        	│       ├── Multiples plots for each plate
         	│       └── Scatter_Plot_by_Well/
-        	│		└── Graphique de corrélation de tous les puits d'une plaque
+        	│		└── ERCC correlation plots for all wells in plate
         	└── 04_Analysis/
 
 
 ```
 
-- `Plate_N.yaml` un fichier de config pour l'outils zUMIs (il s'agit d'1 fichier par plaque)
-- `Plate_N.dgecounts.rds` fichier rds de sortie de zUMIs qui sera utilisé dans l'analyse QC
-- `Plate_N_barcode_airr.tsv` fichier de sortie de Trust4 qui seras utilisé pour la partie BCR et TCR de l'analyse de QC
-- `<PROJECT_NAME>_<EXPERIMENT_NAME>_03_QC.html`  fichier/rapport de sortie de l'analyse de QC contenant l'ensemble des graphiques etc...
+Where :
+
+- `Plate_N.yaml` : a config file for the zUMIs tool (this is 1 file per plate)
+- `Plate_N.dgecounts.rds` : zUMIs output rds file which will be used in QC analysis
+- `Plate_N_barcode_airr.tsv` : Trust4 output file which will be used for the BCR and TCR part of the QC analysis
+- `<PROJECT_NAME>_<EXPERIMENT_NAME>_03_QC.html` : QC analysis output file/report containing all the graphs etc...
 
 ---
+
+## Launching the pipeline
+
+
+### Step 1 : Download the template
+
+This setp allows you to retrieve the complete structure of files you need to run the pipeline. Note that this structure is a template
+that is not intend to be used directly since in contains variables names that will be adapted to your specific case.
+
+This structure is divided in two types of files:
+
+- Code and text files available on github
+- Singularity images available on Zenodo
+
+To retrieve the data:
+
+- Clone the gitbub repository to a new folder. You will see two folders `01_Template` and `02_Config`.
+- Concerning the `01_Template`:
+	- We will call `TEMPLATE_DIR` the path to the folder `01_Template` in this folder. In the following steps, when you will see the syntax `<TEMPLATE_DIR>` in a command, replace this string by the path of the `TEMPLATE_DIR` folder.
+	- Download the zenodo zip file of Singularity images from [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15516231.svg)](https://doi.org/10.5281/zenodo.15516231).
+	- Copy the zip file to the folder `<TEMPLATE_DIR>` and unzip it. It will override the `02_Container` subfolder and add the Singularity SIF files.
+- Concerning the `02_Config`:
+	- Copy the contents of the `02_Config` folder into the directory in which you place your projects.
+	- Rename the subfolders `PROJECT_NAME` and `EXPERIMENT_NAME` with the respective names of the experiment project to be analysed.
+
+
+### Step 2: Initialisation
+
+3. In `<PROJECT_NAME>/<EXPERIMENT_NAME>/01_Reference`, modify the `config_FlashPipe.yml` file according to your needs:
+   - Add the list of `Plate names`
+   - Choose the analysis `Mode` (single-cell / mini-bulk)
+   - Choose if you need `BCR/TCR` analsyis
+   - Add the paths to `FASTQ`, `FACS`, `GSF` files according to your needs
+   - Choose the `Species` (human / mouse)
+
+### Step 3: Generating the file structure
+
+1. Go to `<PROJECT_NAME>/<EXPERIMENT_NAME>` folder.
+
+2. Create a virtual environment:
+```
+virtualenv <VENV_NAME>
+source <VENV_NAME>/bin/activate
+pip install snakemake
+pip install pulp==2.7.0
+```
+
+3. Launch the command : 
+```
+TEMPLATE_PATH=<TEMPLATE_DIR>
+```
+
+4. Launch the command : 
+```
+snakemake -j 1 --config template_path=${TEMPLATE_PATH} --snakefile "${TEMPLATE_PATH}/{{experience_name}}/{{workflow_name}}/01_snakemake/snakefile_copier.yaml" --use-singularity --singularity-args "-B /mnt:/mnt" --dryrun
+```
+
+5. Run the command without --dryrun, if no error is present.
+
+### Step 4: Use of tools and generation of QC analysis
+
+CAUTION: This step performs important calculations. It must be run on a calculation server.
+
+To run the tools and QC analysis :
+
+1. Go to `<PROJECT_NAME>/<EXPERIMENT_NAME>`
+
+2. Run the command :
+
+```
+snakemake -j 1 --snakefile 04_Workflow/01_snakemake/snakefile.yaml --use-singularity --singularity-args "-B /mnt:/mnt -B /tmp:/tmp" --dryrun
+```
+
+3. Run the command without the `--dryrun` option, if there are no errors:
+
+```
+snakemake -j 1 --snakefile 04_Workflow/01_snakemake/snakefile.yaml --use-singularity --singularity-args "-B /mnt:/mnt -B /tmp:/tmp"
+```
 
 
