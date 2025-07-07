@@ -166,22 +166,39 @@ def copy_index_sort(source_dir, destination_dir, plates_list=None):
             if not found:
                 print(f"ERROR: No indexsort file found for plate : {plate}")
                 sys.exit()
-                        
 
 def copy_gsf(source_file, destination_dir):
     '''
-    Single file will be copied (in our case, it will be used to copy the GSF).
-    (Can give a directory, or the link)
+    Copies a single file (typically a GSF file) to a destination directory.
+    If a file with the same name already exists in the target directory, it will be renamed
+    by adding the suffix "_old" before the new file is copied.
 
-    source_file: Source directory containing the files to be copied.
-    destination_dir: Destination directory for copied files.
+    Arguments :
+    - source_file : path to the source file to be copied.
+    - destination_dir : destination directory.
     '''
-    if os.path.isfile(source_file) :
+    if os.path.isfile(source_file):
+        # Recovers only the file name from the source path.
+        # Rebuilds the complete path in the destination directory.
         file_name = os.path.basename(source_file)
-        shutil.copy(source_file, os.path.join( destination_dir, file_name))
-    else :
-        print("ERROR:", source_file, "is not a file.")
-        sys.exit()
+        file_output_template = os.path.join(destination_dir, file_name)
+        # Checks that the source file is not already located in the destination directory.
+        if file_output_template != source_file:
+            # If a file with the same name already exists in the destination,
+            # rename it by adding the suffix “_old” before overwriting the file.
+            if os.path.exists(file_output_template):
+                base, ext = os.path.splitext(file_output_template)
+                old_file = base + "_old" + ext
+                os.rename(file_output_template, old_file)
+
+            shutil.copy(source_file, file_output_template)
+        # If the source file is already present in the same location with the same name,
+        # no action is required (avoids copying a file onto itself).
+        elif file_output_template == source_file and os.path.exists(file_output_template):
+            pass
+        else:
+            print("ERROR:", source_file, "is not a file.")
+            sys.exit()
 
 def verify_method(parameter, indexsort):
     '''

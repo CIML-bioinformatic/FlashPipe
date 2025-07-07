@@ -6,7 +6,6 @@
 ## @knitr compute_index_sort
 
 if (INDEXSORT){
-  
   cat("\n  \n")
   cat("## FACS {.tabset .tab-fade} \n\n")
   
@@ -16,7 +15,29 @@ if (INDEXSORT){
   # Loop that recovers all the data present in the files (for each plate) for subsequent graphing.
   for (plate_name in levels(PLATES_LIST)) {
     path_index_sort_file = paste(PATH_EXPERIMENT_RAWDATA, "/01_IndexSort/", plate_name, "_indexsort.csv", sep = "")
-    index_sort_df = read.csv(path_index_sort_file)
+    # Detects the type of spacer in the csv file (based only on "," or ";")
+    separator <- detect_sep_csv(path_index_sort_file)
+    # Read the file with the correct separator present in the csv file.
+    index_sort_df <- read.csv(path_index_sort_file, sep = separator)
+    
+    ## Step to keep only the wells that contain values in the columns. The others are deleted to avoid overloading the graph.
+    # Position of WellID column
+    well_col_index <- which(names(index_sort_df) == WELL_ID)
+    other_cols <- index_sort_df[ , -well_col_index, drop = FALSE]
+    # Delete rows where all other columns are NA or empty ("")
+    keep_rows <- apply(other_cols, 1, function(row) {
+      any(!is.na(row) & row != "")
+    })
+    
+    # Lines to remove, with name for the warning and prevention
+    if (nrow(index_sort_df[!keep_rows, ]) > 0){
+      well_remove = index_sort_df[!keep_rows, ]
+      cat("Empty wells were detected in the IndexSort file for the plate :", plate_name)
+      cat("\n")
+      cat("As a result, the wells :", well_remove[[WELL_ID]], " were removed for IndexSort analysis.")
+      cat("\n\n")}
+    # Filter lines to keep
+    index_sort_df <- index_sort_df[keep_rows, ]
     
     # Apply a calcul to the non lineary column
     for (column_name in colnames(index_sort_df)) {
@@ -25,10 +46,8 @@ if (INDEXSORT){
       }
       if (!(startsWith(tolower(column_name), "lin_"))) {
         if (is.numeric(index_sort_df[[column_name]]) && !column_name %in% CATEGORIAL_TERM_SET) {
-          index_sort_df[[column_name]] = asinh(index_sort_df[[column_name]] / 50)
-        }
+          index_sort_df[[column_name]] = asinh(index_sort_df[[column_name]] / 50)}}
       }
-    }
     
     # Adds current plate data to dataframe (accumulates information)
     index_sort_df[ , PLATE_NAME] = plate_name
@@ -86,7 +105,6 @@ if (INDEXSORT){
       cat("#### ", plate_name, " \n\n")
       index_sort_df = all_index_sort_df[ which( all_index_sort_df[ , PLATE_NAME] == plate_name),]
       
-      # Plate plot graph
       plate_plot_plates <- simple_plate_plot(
         data = index_sort_df,
         position = WELL_ID,
@@ -94,8 +112,7 @@ if (INDEXSORT){
         plate_size = 96,
         plate_type = "round",
         # limits = c(min_val, max_val),
-        title = paste("Plate", plate_name, " : ", categorical_value)
-      )
+        title = paste("Plate", plate_name, " : ", categorical_value))
       print(plate_plot_plates)
       cat("\n  \n")
     }
@@ -108,8 +125,6 @@ if (INDEXSORT){
   for (colname in colnames(all_index_sort_df)) {
     if (!colname %in% CATEGORIAL_TERM_SET && colname != WELL_ID && colname != PLATE_NAME) {
       cat("#### ", colname, " {.tabset .tab-fade} \n\n")
-      
-      # Violin plot of all plates, for each column inside the dataframe
       violin_plot_colname_index_sort <- ggplot(all_index_sort_df, aes(x = .data[[PLATE_NAME]], y = .data[[colname]])) + 
         geom_violin(aes( fill = .data[[PLATE_NAME]])) + 
         geom_jitter(width = 0.2) +
@@ -121,7 +136,6 @@ if (INDEXSORT){
         ggtitle(paste("Dotplot of : ", colname ," for all plates")) +
         theme_light() +
         theme(axis.text.x = element_text(angle = 45, hjust = 1))
-      
       print(violin_plot_colname_index_sort)
       cat("\n\n")
       
@@ -130,7 +144,6 @@ if (INDEXSORT){
       
       for (plate_name in levels(PLATES_LIST)) {
         cat("##### ", plate_name, " {.tabset .tab-fade} \n\n")
-        
         index_sort_df = all_index_sort_df[ which( all_index_sort_df[ , PLATE_NAME] == plate_name),]
         
         plate_plot_col_name <- simple_plate_plot(
@@ -140,8 +153,7 @@ if (INDEXSORT){
           plate_size = 96,
           plate_type = "round",
           limits = c(limits_min, limits_max),
-          title = paste("Plate", plate_name, " : ", colname)
-        )
+          title = paste("Plate", plate_name, " : ", colname))
         print(plate_plot_col_name)
         cat("\n\n")
       }

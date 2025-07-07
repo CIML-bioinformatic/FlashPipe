@@ -104,12 +104,15 @@ rule copy_zUMIS:
     zUMIs_tool = "/tmp/zUMIs/zUMIs-2.9.7/zUMIs.sh"
   shell:
     '''
-    rm -rf /tmp/zUMIs/zUMIs-main
-    rm -rf /tmp/zUMIs/zUMIs-2.9.7
-    mkdir -p /tmp/zUMIs
-    unzip {input.zUMIs_tool_zip} -d /tmp/zUMIs
-    mv -T /tmp/zUMIs/zUMIs-main /tmp/zUMIs/zUMIs-2.9.7
-    chmod -R 755 /tmp/zUMIs/zUMIs-2.9.7
+    if ! test -f /tmp/zUMIs/zUMIs-2.9.7/zUMIs.sh; then
+      rm -rf /tmp/zUMIs/zUMIs-main
+      rm -rf /tmp/zUMIs/zUMIs-2.9.7
+      mkdir -p /tmp/zUMIs
+      unzip {input.zUMIs_tool_zip} -d /tmp/zUMIs
+      mv -T /tmp/zUMIs/zUMIs-main /tmp/zUMIs/zUMIs-2.9.7
+      chmod -R 777 /tmp/zUMIs/zUMIs-2.9.7
+    fi
+
     '''
 
 ############################################

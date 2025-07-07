@@ -17,44 +17,105 @@ LITERAL_TITLE = "Quality control of FlashPipe"
 # Example : ANALYSIS_STEP_NAME = "02_GlobalHeterogeneity"
 ANALYSIS_STEP_NAME = "03_QC"
 
-# Initialize an error list
-error_intialisation <- c()
+# Params for analysis, and the QC to adapt the résult in the HTML with the good option.
+# This section will be completed by “Copier” automatically.
+# Exemple : METHOD = single-cell / INDEXSORT = FALSE / BCR = TRUE / ...
+METHOD = "{{method_analysis}}"
+INDEXSORT = {{index_sort_analysis}}
+BCR = {{bcr_repertoire_analysis}}
+TCR = {{tcr_repertoire_analysis}}
+METADATA = {{metadata_analysis}}
 
-# This is the path to the analysis step output folder. It will be automatically
-# created at first analysis launch
-PATH_ANALYSIS_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, ANALYSIS_STEP_NAME)
-if (PATH_ANALYSIS_OUTPUT == ""){
-  error_intialisation <- c(error_intialisation, "\nERROR : Path to 03_QC in R is empty (PATH_ANALYSIS_OUTPUT) ")
-}
-PATH_ZUMIS_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, "01_zUMIs")
-if (PATH_ZUMIS_OUTPUT == ""){
-  error_intialisation <- c(error_intialisation, "\nERROR : Path to the zUMIs output directory (01_zUMIs) in R is empty (PATH_ZUMIS_OUTPUT)")
-}
-PATH_EXPERIMENT = file.path( PATH_EXPERIMENT_REFERENCE, "00_Experiment")
-if (PATH_EXPERIMENT == ""){
-  error_intialisation <- c(error_intialisation, "\nERROR : Path to the experiment directory (00_experiment) in R is empty (PATH_EXPERIMENT)")
-}
-PATH_WELL_BARCODE_FILE = file.path( PATH_EXPERIMENT, "cell_barcode_well.csv")
-if (PATH_WELL_BARCODE_FILE == ""){
-  error_intialisation <- c(error_intialisation, "\nERROR : Path to cell_barcode file in R is empty (PATH_WELL_BARCODE_FILE)")
-}
-PATH_ERCC_CONCENTRATION = file.path( PATH_EXPERIMENT, "ERCC_concentration.csv")
-if (PATH_ERCC_CONCENTRATION == ""){
-  error_intialisation <- c(error_intialisation, "\nERROR : Path to the ERCC_concentration file in R is empty (PATH_ERCC_CONCENTRATION)")
-}
-PATH_GSF = "{{gsf_file}}"
-if (PATH_GSF == ""){
-  error_intialisation <- c(error_intialisation, "\nERROR : Path to GSF in R is empty (PATH_GSF)")
-}
+# Load FlashPipe configuration file filled in for user, plus check that it exists.
 PATH_CONFIG_FILE = file.path( PATH_EXPERIMENT_REFERENCE, "Config_FlashPipe.yml")
 if (PATH_CONFIG_FILE == ""){
-  error_intialisation <- c(error_intialisation, "\nERROR : Path to user config file (Config_FlashPipe.yml) in R is empty (PATH_CONFIG_FILE)")
+  error_intialisation <- c(error_intialisation, "<BR>\nERROR : Path to user config file (Config_FlashPipe.yml) in R is empty (PATH_CONFIG_FILE)")
 }
 CONFIG_FILE_YAML = yaml::yaml.load_file(PATH_CONFIG_FILE)
 
-PATH_TRUST4_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, "02_trust4")
-if (PATH_TRUST4_OUTPUT == ""){
-  error_intialisation <- c(error_intialisation, "\nERROR : Path to Trust4 output directory (02_trust4) in R is empty (PATH_TRUST4_OUTPUT)")
+# Recover the values present in the FlashPipe configuration file
+## The purpose of this section is to check whether or not there have been any changes in the data.
+method_analysis = gsub( " ", "", strsplit( CONFIG_FILE_YAML$method_analysis[[1]], fixed= TRUE, split = ",")[[1]])
+indexsort_analysis <- as.logical(toupper(gsub(" ", "", CONFIG_FILE_YAML$index_sort_analysis[[1]])))
+bcr_repertoire <- as.logical(toupper(gsub(" ", "", CONFIG_FILE_YAML$bcr_repertoire_analysis[[1]])))
+tcr_repertoire <- as.logical(toupper(gsub(" ", "", CONFIG_FILE_YAML$tcr_repertoire_analysis[[1]])))
+metadata_analysis <- as.logical(toupper(gsub(" ", "", CONFIG_FILE_YAML$metadata_analysis[[1]])))
+
+# Check that previous parameters in the file match any new ones (especially if the second snakemake is relaunched)
+# A detail, with the aim of displaying several warnings. We store them in variables in order to display them all together instead of stopping the code at each warning.
+error_in_config_file <- c()
+if (METHOD != method_analysis){
+  METHOD = method_analysis
+  error_in_config_file <- c(error_in_config_file, paste0("<BR>\n Le mode ", METHOD, " sera sélectionner pour la méthode d'analyse."))
+}
+if (INDEXSORT != indexsort_analysis){
+  INDEXSORT = indexsort_analysis
+  error_in_config_file <- c(error_in_config_file, paste0("<BR>\n IndexSort analysis will be set on ", INDEXSORT))
+}
+if (BCR != bcr_repertoire){
+  BCR = bcr_repertoire
+  error_in_config_file <- c(error_in_config_file, paste0("<BR>\n BCR directory analysis will be set to ", BCR))
+}
+if (TCR != tcr_repertoire){
+  TCR = tcr_repertoire
+  error_in_config_file <- c(error_in_config_file, paste0("<BR>\n TCR directory analysis will be set to ", TCR))
+}
+if (METADATA != metadata_analysis){
+  METADATA = metadata_analysis
+  error_in_config_file <- c(error_in_config_file, paste0("<BR>\n Metadata analysis will be set to ", METADATA))
+}
+
+# Display errors if any were found
+if (length(error_in_config_file) > 0) {
+  cat(" <BR>")
+  cat("\n Inconsistencies were found between the analysis parameters : \n")
+  cat(error_in_config_file, "\n")
+}
+
+# Environment cleanup: removes temporary objects
+rm(error_in_config_file)
+rm(method_analysis)
+rm(indexsort_analysis)
+rm(bcr_repertoire)
+rm(tcr_repertoire)
+rm(metadata_analysis)
+
+# We come to setup the path of files automatically set up by Copier, and check if the paths exist to avoid any errors.
+# Initialize an error list
+error_intialisation <- c()
+# This is the path to the analysis step output folder. It will be automatically created at first analysis launch
+PATH_ANALYSIS_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, ANALYSIS_STEP_NAME)
+if (PATH_ANALYSIS_OUTPUT == ""){
+  error_intialisation <- c(error_intialisation, "<BR>\nERROR : Path to 03_QC in R is empty (PATH_ANALYSIS_OUTPUT) ")
+}
+PATH_ZUMIS_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, "01_zUMIs")
+if (PATH_ZUMIS_OUTPUT == ""){
+  error_intialisation <- c(error_intialisation, "<BR>\nERROR : Path to the zUMIs output directory (01_zUMIs) in R is empty (PATH_ZUMIS_OUTPUT)")
+}
+PATH_EXPERIMENT = file.path( PATH_EXPERIMENT_REFERENCE, "00_Experiment")
+if (PATH_EXPERIMENT == ""){
+  error_intialisation <- c(error_intialisation, "<BR>\nERROR : Path to the experiment directory (00_experiment) in R is empty (PATH_EXPERIMENT)")
+}
+PATH_WELL_BARCODE_FILE = file.path( PATH_EXPERIMENT, "cell_barcode_well.csv")
+if (PATH_WELL_BARCODE_FILE == ""){
+  error_intialisation <- c(error_intialisation, "<BR>\nERROR : Path to cell_barcode file in R is empty (PATH_WELL_BARCODE_FILE)")
+}
+PATH_ERCC_CONCENTRATION = file.path( PATH_EXPERIMENT, "ERCC_concentration.csv")
+if (PATH_ERCC_CONCENTRATION == ""){
+  error_intialisation <- c(error_intialisation, "<BR>\nERROR : Path to the ERCC_concentration file in R is empty (PATH_ERCC_CONCENTRATION)")
+}
+PATH_GSF = "{{gsf_file}}"
+if(METADATA){
+  if (PATH_GSF == ""){
+    error_intialisation <- c(error_intialisation, "<BR>\nERROR : Path to GSF in R is empty (PATH_GSF)")
+  } 
+}
+
+if (BCR | TCR){
+  PATH_TRUST4_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, "02_trust4")
+  if (PATH_TRUST4_OUTPUT == ""){
+    error_intialisation <- c(error_intialisation, "<BR>\nERROR : Path to Trust4 output directory (02_trust4) in R is empty (PATH_TRUST4_OUTPUT)")
+  }
 }
 
 ######## CONSTANTS USED BY THE ANALYSIS STEP
@@ -62,34 +123,32 @@ if (PATH_TRUST4_OUTPUT == ""){
 ATTOMOLE_TO_MOLECULE =  602214.1499989164
 UL_BY_WELL = 2.5e-8
 
-# Take value for categorial column name for the analysis
+# Take the values present in the “Categorial_term_set” column in the FlashPipe configuration file for 
+# the names of the columns to be added to index sort file (other than fluorescence markers).
 if ( !is.null(CONFIG_FILE_YAML$categoriale_term_set)){
   categorial_term_set_list = gsub( " ", "", strsplit( CONFIG_FILE_YAML$categoriale_term_set[[1]], fixed= TRUE, split = ",")[[1]])
   CATEGORIAL_TERM_SET = as.vector(unlist(categorial_term_set_list))
-  if (length(CATEGORIAL_TERM_SET) <= 1){
+  if (length(CATEGORIAL_TERM_SET) < 1){
     error_intialisation <- c(error_intialisation, "\nERROR : The column names in CATEGORIAL_TERM_SET are empty in R")
   }
   rm(categorial_term_set_list)
 }
 
-# Params for analysis
-METHOD = "{{method_analysis}}"
-INDEXSORT = {{index_sort_analysis}}
-BCR = {{bcr_repertoire_analysis}}
-TCR = {{tcr_repertoire_analysis}}
-METADATA = {{metadata_analysis}}
-
+# Params constans used for all the analysis
 WELL_ID = "WellID"
 PLATE_NAME = "Plate_Name"
 STATISTIC = "Statistic"
 CELL_ID = "cell_id"
 
-# Params for TRUST4
+# Params constants used for TRUST4
 C_CALL = "c_call"
 V_CALL = "v_call"
 J_CALL = "j_call"
 PRODUCTIVE = "productive"
+CLASS_CALL = "c_call_class"
+CHAIN_COMPOSITION = "chain_composition"
 
+# Constant containing the set of colors to be used in the various figures.
 GENERAL_COLOR_PANEL = c("#65c44f", "#7c64d4", "#abb739", "#d43c55", "#3fc1bf", "#c050b5", "#5e9dd7", "#d59d69", "#d5542e", "#6e6fb9", "#d59a35", "#737027",
                         "#4b8138", "#4e9830", "#9e5c2a", "#cf89c5", "#99aa5e", "#cd6f6d", "#39855f", "#ba497a", "#5ec287")
 

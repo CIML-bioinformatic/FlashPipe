@@ -1,5 +1,5 @@
 ## ####################################################
-## This script aims to plot information on the GSF file provide.
+## This script aims to plot information of the GSF file provide.
 ## ####################################################
 
 ## @knitr display_metadata
@@ -10,7 +10,6 @@
 ### For values other than numeric (character), we'll have a stacked barchat followed by plate plot (for each plate).
 
 if (METADATA){
-  
   cat("\n  \n")
   cat("## MetaData {.tabset .tab-fade} \n\n")
   
@@ -18,6 +17,27 @@ if (METADATA){
   all_plate_sheet_gsf = data.frame()
   for (plate_name in levels(PLATES_LIST)){
     plate_sheet = read_excel(PATH_GSF, sheet = plate_name)
+    
+    ## Step to keep only the wells that contain values in the columns. The others are deleted to avoid overloading the graph.
+    # Position of WellID column
+    well_col_index <- which(names(plate_sheet) == WELL_ID)
+    other_cols <- plate_sheet[ , -well_col_index, drop = FALSE]
+    # Delete rows where all other columns are NA or empty ("")
+    keep_rows <- apply(other_cols, 1, function(row) {
+      any(!is.na(row) & row != "")
+    })
+    
+    # Lines to remove, with name for the warning and prevention
+    if (nrow(plate_sheet[!keep_rows, ]) > 0){
+      well_remove = plate_sheet[!keep_rows, ]
+      cat("Empty wells were detected in the MetaData file for the plate :", plate_name)
+      cat("\n")
+      cat("As a result, the wells :", well_remove[[WELL_ID]], " were removed for Metadata analysis.")
+      cat("\n\n")
+    }
+    
+    # Filter lines to keep
+    plate_sheet <- plate_sheet[keep_rows, ]
     plate_sheet[ , PLATE_NAME] = plate_name
     all_plate_sheet_gsf = rbind(all_plate_sheet_gsf, plate_sheet)
   }
@@ -82,8 +102,7 @@ if (METADATA){
           value = column_name,
           plate_size = 96,
           plate_type = "round",
-          title = paste("Plate", plate_name, " : ", column_name)
-        )
+          title = paste("Plate", plate_name, " : ", column_name))
         print(plate_plot_plates)
         cat("\n  \n")
       }

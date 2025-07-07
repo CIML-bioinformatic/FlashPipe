@@ -14,17 +14,20 @@ library( UpSetR)
 library( tidyr)
 library( viridis)
 library( readxl)
+library( SeuratObject)
 
 ######## DEFINITION OF FUNCTIONS #########################
 ######## Add here all the definition of functions
 
 # Function to sort and concatenate string components
 normalize_chain <- function(components) {
+  # Sorts vector elements in alphabetical order
   sorted_components <- sort(components)
+  # Concatenates sorted items into a single string, separated by an underscore ("_").
   return(paste(sorted_components, collapse = "_"))
 }
 
-# Function plate plot modify to be able to use it inside a for loop
+# Plate_plot function modified to allow iterative use within for loops.
 simple_plate_plot = function (data, position, value, label, plate_size = 96, plate_type = "square", 
                               colour, limits, title, title_size, show_legend = TRUE, legend_n_row, 
                               label_size, silent = TRUE, scale) 
@@ -91,11 +94,6 @@ simple_plate_plot = function (data, position, value, label, plate_size = 96, pla
   }
   max_label_length <- max(nchar(as.character(unique(data[, value]))))
   MORELETTERS <- c(LETTERS, "AA", "AB", "AC", "AD", "AE", "AF")
-  # data_prep <- dplyr::mutate(dplyr::ungroup(data), row = stringr::str_extract({{position}}, pattern = "[:upper:]+"), 
-  #                            col = as.numeric(stringr::str_extract({{position}}, pattern = "\\d+")), 
-  #                            row_num = as.numeric(match(.data$row, MORELETTERS)), 
-  #                            colours = data_colours, 
-  #                            label_colours = label_col)
   data_prep <- dplyr::mutate(dplyr::ungroup(data), 
                              row = stringr::str_extract(.data[[position]], pattern = "[:upper:]+"), 
                              col = as.numeric(stringr::str_extract(.data[[position]], pattern = "\\d+")), 
@@ -232,4 +230,12 @@ showSimpleDT = function( dataToShow, rownames = TRUE, colnames = "Value")
                             stateSave = TRUE));
 }
 
-
+# Function to read csv files according to their separator. (Particularly for sort indexes)
+detect_sep_csv <- function(file_path) {
+  first_line <- readLines(file_path, n = 1)
+  if (length(grep(";", first_line))) {
+    return(";")
+  } else {
+    return(",")
+  }
+}

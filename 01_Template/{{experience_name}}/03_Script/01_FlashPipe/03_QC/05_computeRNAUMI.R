@@ -6,8 +6,7 @@
 
 # Create an empty dataframe to store the UMI Count and feature count
 all_summary_RNA_df_all_plate <- data.frame(stringsAsFactors = FALSE)
-
-# Initialize the list of all the dataframe for each plates
+# Initialize the list that will store all the dataframes for each plate to be used for the figures.
 rna_count_list = list()
 
 # Iterate over each plate in the list

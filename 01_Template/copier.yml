@@ -1,84 +1,84 @@
 barcode_file:
-  default: /mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/01_Reference/00_Experiment/cell_barcode.txt
+  default: 
   type: str
 bcr_repertoire_analysis:
-  default: 'FALSE'
+  default: 
   type: str
 categoriale_term_set:
-  default: 'FALSE'
+  default: 
   type: str
 ercc_concentration_file:
-  default: /mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/01_Reference/00_Experiment/ERCC_concentration.csv
+  default: 
   type: str
 experience_name:
-  default: 250512_VH00228_257_AAGY3H2M5
+  default: 
   help: What is the name of your experience ?
   type: str
 fastq_files_read1:
-  default: /mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_1_S1_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_2_S2_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_3_S3_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_4_S4_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_5_S5_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_6_S6_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_7_S7_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_8_S8_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_9_S9_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_10_S10_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_11_S11_R1_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_12_S12_R1_001.fastq.gz
+  default: 
   type: str
 fastq_files_read2:
-  default: /mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_1_S1_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_2_S2_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_3_S3_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_4_S4_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_5_S5_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_6_S6_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_7_S7_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_8_S8_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_9_S9_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_10_S10_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_11_S11_R2_001.fastq.gz,/mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/00_RawData/00_RNA/GEX_library_12_S12_R2_001.fastq.gz
+  default: 
   type: str
 gsf_file:
-  default: /mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip/250512_VH00228_257_AAGY3H2M5/01_Reference/00_Experiment/250507_GenomicsSubmissionForm_FB5PseqFLASH.xlsx
+  default: 
   type: str
 gtf_file:
-  default: /mnt/DOSI/PLATEFORMES/BIOINFORMATIQUE/01_COMMON_DATA/04_TOOLS/Flash-FB5Pseq/ref/refdata-gex-mm10-2020-A/genes_ERCC92_eYFP.gtf
+  default: 
   type: str
 index_sort:
-  default: 'FALSE'
+  default: 
   type: str
 index_sort_analysis:
-  default: 'FALSE'
+  default: 
   type: str
 metadata_analysis:
-  default: 'TRUE'
+  default: 
   type: str
 method_analysis:
-  default: single-cell
+  default: 
   type: str
 outdir_temp:
-  default: /tmp/zUMIs
+  default: 
   type: str
 output_name:
-  default: 05_Output
+  default: 
   help: Name of you directory for you're output ?
   type: str
 path_project:
-  default: /mnt/DOSI/MASTER_TEMP/CB2M/Test/Decitip
+  default: 
   type: str
 plate_names:
-  default: GEX_library_1,GEX_library_2,GEX_library_3,GEX_library_4,GEX_library_5,GEX_library_6,GEX_library_7,GEX_library_8,GEX_library_9,GEX_library_10,GEX_library_11,GEX_library_12
+  default:
   type: str
 project_name:
-  default: Decitip
+  default: 
   help: What is the name of your project ?
   type: str
 rawdata_name:
-  default: 00_RawData
+  default: 
   help: Name of you directory for you're raw data ?
   type: str
 reference_name:
-  default: 01_Reference
+  default: 
   help: Name of you directory for you're reference ?
   type: str
 star_index:
-  default: /mnt/DOSI/PLATEFORMES/BIOINFORMATIQUE/01_COMMON_DATA/04_TOOLS/Flash-FB5Pseq/ref/refdata-gex-mm10-2020-A/mm10_ERCC92_eYFP_STAR273a_noGTF
+  default: 
   type: str
 tcr_repertoire_analysis:
-  default: 'FALSE'
+  default: 
   type: str
 template_path:
-  default: /mnt/DOSI/MASTER_TEMP/CB2M/Project/01_FlashPipe/01_Template
+  default: 
   type: str
 trust4_imgt_BCR_TCR:
-  default: 01_Reference/00_Experiment/02_IMGT/mouse/GRCm38_bcrtcr.fa
+  default: 
   type: str
 trust4_imgt_VDJ:
-  default: 01_Reference/00_Experiment/02_IMGT/mouse/mouse_IMGT+C.fa
+  default: 
   type: str
 workflow_name:
-  default: 04_Workflow
+  default: 
   help: Name of you directory for you're workflow ?
   type: str
