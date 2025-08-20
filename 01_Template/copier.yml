@@ -4,15 +4,11 @@ barcode_file:
 bcr_repertoire_analysis:
   default: 
   type: str
-categoriale_term_set:
-  default: 
-  type: str
 ercc_concentration_file:
   default: 
   type: str
 experience_name:
-  default: 
-  help: What is the name of your experience ?
+  default: Last_Test_V3
   type: str
 fastq_files_read1:
   default: 
@@ -38,30 +34,20 @@ metadata_analysis:
 method_analysis:
   default: 
   type: str
-outdir_temp:
+not_fluorescent:
   default: 
   type: str
-output_name:
+outdir_temp:
   default: 
-  help: Name of you directory for you're output ?
   type: str
 path_project:
   default: 
   type: str
 plate_names:
-  default:
+  default: 
   type: str
 project_name:
   default: 
-  help: What is the name of your project ?
-  type: str
-rawdata_name:
-  default: 
-  help: Name of you directory for you're raw data ?
-  type: str
-reference_name:
-  default: 
-  help: Name of you directory for you're reference ?
   type: str
 star_index:
   default: 
@@ -77,8 +63,4 @@ trust4_imgt_BCR_TCR:
   type: str
 trust4_imgt_VDJ:
   default: 
-  type: str
-workflow_name:
-  default: 
-  help: Name of you directory for you're workflow ?
   type: str

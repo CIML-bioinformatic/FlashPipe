@@ -5,6 +5,20 @@
 
 ## @knitr compute_ERCC_accuracy
 
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# General description of the code :
+# 1. Calculation of the number of molecules for ERCC data
+# 2. Calculation of correlation between expected and observed ERCC data
+# 3. Construction of general ERCC correlation graph
+# 4. Construction of ERCC correlation scatter plots
+# 5. Construction of individual plate graphs for ERCC correlation
+# 6. Retrieve graphs of minimum, maximum and mean ERCC values to display graphs in HTML report.
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+# ################################################################
+# ## 1. Calculation of the number of molecules for ERCC data #####
+# ################################################################
+
 if (ERCC){
   # Create an empty dataframe to store the ERCC correlation results
   all_ERCC_correlation <- data.frame(stringsAsFactors = FALSE)
@@ -18,6 +32,10 @@ if (ERCC){
   
   # Initialize the list of all the dataframe for each plates
   all_ercc_correlation_by_plate_list = list()
+  
+  # ##############################################################################
+  # ## 2. Calculation of correlation between expected and observed ERCC data #####
+  # ##############################################################################
   
   # For each plate, and each well retrieve the observed ERCC UMI and compare them to
   # the expected ERCC UMI with a Pearson correlation test.
@@ -56,13 +74,17 @@ if (ERCC){
     ERCC_correlation <- merge(x=ERCC_correlation, y= ERCC_length_number, by = "row.names", all = TRUE)
     
     # Rename the Row.names column to WellID
-    names(ERCC_correlation)[names(ERCC_correlation) == "Row.names"] <- WELL_ID
+    names(ERCC_correlation)[names(ERCC_correlation) == "Row.names"] <- COLUMN_HEADER_WELL_ID
+    
+    # ##########################################################
+    # ## 3. Construction of general ERCC correlation graph #####
+    # ##########################################################
     
     # Stores ERCC data sorted by plate name for subsequent display in a plate_plot
     all_ercc_correlation_by_plate_list[[ plate_name]] = ERCC_correlation
     
     # For the general plot with all points
-    plate_correlation <- data.frame(Plate_Name = rep(plate_name, nrow(ERCC_correlation)), ## J'ai remplacé la length par le nrow (si bug remettre length)
+    plate_correlation <- data.frame(Plate_Name = rep(plate_name, nrow(ERCC_correlation)),
                                     ERCC_correlation = ERCC_correlation)
     
     # Add to our global dataframe, to later use it for a plot outside the loop
@@ -73,11 +95,11 @@ if (ERCC){
   colnames(all_ERCC_correlation) <- gsub("^ERCC_correlation.", "", colnames(all_ERCC_correlation))
   
   # Order the plate names by the order provided by the user
-  all_ERCC_correlation[, PLATE_NAME] = factor(all_ERCC_correlation[, PLATE_NAME], levels = levels(PLATES_LIST))
+  all_ERCC_correlation[, COLUMN_HEADER_PLATE_NAME] = factor(all_ERCC_correlation[, COLUMN_HEADER_PLATE_NAME], levels = levels(PLATES_LIST))
   
   # Dot plot of all plates for each ERCC.
-  plot_all_correlation <- ggplot(all_ERCC_correlation, aes(x = .data[[PLATE_NAME]], y = ERCC_correlation)) + 
-    geom_violin(aes(fill = .data[[PLATE_NAME]])) + 
+  plot_all_correlation <- ggplot(all_ERCC_correlation, aes(x = .data[[COLUMN_HEADER_PLATE_NAME]], y = ERCC_correlation)) + 
+    geom_violin(aes(fill = .data[[COLUMN_HEADER_PLATE_NAME]])) + 
     geom_jitter(width = 0.2) +
     stat_summary(fun = "mean", geom = "crossbar", colour = "red", linewidth = 0.5, width = 0.08, aes(linetype = "Mean", group = 1)) + 
     stat_summary(fun = "median", geom = "crossbar", colour = "orange", linewidth = 0.5, width = 0.08, aes(linetype = "Median", group = 1)) +
@@ -89,6 +111,10 @@ if (ERCC){
     xlab("Plate name") + ylab("ERCC pearson correlation") +
     ggtitle("Violin Plot of ERCC accuracy for all plates")
   print(plot_all_correlation)
+  
+  # ##########################################################
+  # ## 4. Construction of ERCC correlation scatter plots #####
+  # ##########################################################
   
   # Print the ERCC UMI per plate in plate plots
   for (plate_name in levels(PLATES_LIST)) {
@@ -102,7 +128,7 @@ if (ERCC){
     ERCC_sort <- ERCC_EXPECTED_DF[common_ERCC, ]
     
     # Create the output path
-    plate_output_directory <- file.path(PATH_ANALYSIS_OUTPUT, plate_name)
+    plate_output_directory <- file.path(PATH_ANALYSIS_OUTPUT, plate_name, '04_computeERCCAccuracy')
     path_scatter_plot <- file.path(plate_output_directory, "Scatter_Plot_by_Well/Scatter_Plot_by_Well_log_ERCC")
     path_scatter_log_plot <- file.path(plate_output_directory, "Scatter_Plot_by_Well/Scatter_Plot_by_Well_ERCC")
     
@@ -149,6 +175,10 @@ if (ERCC){
       ggsave(plot_filename, plot = plot)
     }
     
+    # ########################################################################
+    # ## 5. Construction of individual plate graphs for ERCC correlation #####
+    # ########################################################################
+    
     cat("\n \n")
     cat("\n#### ", plate_name, "{.tabset .tab-fade} \n\n")
     
@@ -176,33 +206,37 @@ if (ERCC){
     plot_filename_ERRC <- file.path(plate_output_directory, paste0("ScatterPlot_", plate_name, "ERCC_Correlation.png"))
     ggsave(plot_filename_ERRC, plot = plates_plot_ERCC)
     
+    # ######################################################################################################
+    # ## 6. Retrieve graphs of minimum, maximum and mean ERCC values to display graphs in HTML report. #####
+    # ######################################################################################################
+    
     # Recovery of maximum ERRC correlation
     ERCC_max <- which.max(ERCC_correlation$ERCC_correlation)
     ERCC_max_df <- ERCC_correlation[ERCC_max,]
-    ERCC_max_df[ , STATISTIC] <- "Maximum"
+    ERCC_max_df[ , COLUMN_HEADER_STATISTIC] <- "Maximum"
     
     # Minimum ERRC correlation recovery
     ERCC_min <- which.min(ERCC_correlation$ERCC_correlation)
     ERCC_min_df <- ERCC_correlation[ERCC_min,]
-    ERCC_min_df[ , STATISTIC] <- "Minimum"
+    ERCC_min_df[ , COLUMN_HEADER_STATISTIC] <- "Minimum"
     
     # Recovery of the average ERRC correlations and selection of the closest line
     # If NAs are present in the data, then there may be errors in the code. So we still want results. We ignore them (because other values are present).
     ERCC_mean <- mean(ERCC_correlation$ERCC_correlation, na.rm = TRUE)
     ERCC_mean_closest <- Closest(ERCC_correlation$ERCC_correlation, a = ERCC_mean, na.rm = TRUE)
     ERCC_mean_closest_df <- ERCC_correlation[ERCC_correlation$ERCC_correlation == ERCC_mean_closest & !is.na(ERCC_correlation$ERCC_correlation), ]
-    ERCC_mean_closest_df[ , STATISTIC] <- "Mean"
+    ERCC_mean_closest_df[ , COLUMN_HEADER_STATISTIC] <- "Mean"
     
     # Creation of a dataframe containing these 3 values (min, mean, max)
     statistic_df <- data.frame(stringsAsFactors = FALSE)
     statistic_df <- rbind(ERCC_min_df, ERCC_mean_closest_df, ERCC_max_df)
     
     # Display scatter plots of minimum, mean_closest and maximum ERCC correlation.
-    for (name_stat in (statistic_df[ , STATISTIC])){
+    for (name_stat in (statistic_df[ , COLUMN_HEADER_STATISTIC])){
       cat("\n \n")
       cat("\n#####", name_stat, "\n\n")
-      cat( "\nERCC Correlation for well ID", statistic_df$WellID[statistic_df[ , STATISTIC] == name_stat], ":", statistic_df$ERCC_correlation[statistic_df[ , STATISTIC] == name_stat], "\n \n")
-      print( scatter_plot_list[[  statistic_df$WellID[statistic_df[ , STATISTIC] == name_stat]]])
+      cat( "\nERCC Correlation for well ID", statistic_df$WellID[statistic_df[ , COLUMN_HEADER_STATISTIC] == name_stat], ":", statistic_df$ERCC_correlation[statistic_df[ , COLUMN_HEADER_STATISTIC] == name_stat], "\n \n")
+      print( scatter_plot_list[[  statistic_df$WellID[statistic_df[ , COLUMN_HEADER_STATISTIC] == name_stat]]])
       
     }}
   

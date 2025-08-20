@@ -7,10 +7,22 @@
 
 ## @knitr format_count_table
 
-####### Output of Trust4 #######
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# General description of the code :
+# 1. Preprocess Trust4 output data for analysis
+# 2. Preprocessing of zUMIs output data for analysis with preprocessed file output
+# 3. Recover zUMIs data for Seurat object creation
+# 4. Retrieve metadata information (gsf) for seurat object metadata
+# 5. Retrieve sort index information (FACS data) for seurat object metadata
+# 6. Create seurat object with sorted data (zUMIs and metadata)
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+########################################################
+# ## 1. Preprocess Trust4 output data for analysis #####
+########################################################
 
 # Read the Trust 4 output file and sort the TCR and BCR data into different lists for use in quality control later.
-if (BCR | TCR){
+if (PARAMS_BCR | PARAMS_TCR){
   # Initialize lists that will be used in subsequent quality checks, simplifying analysis by storing data that has already been checked.
   BCR_df_list = list()
   TCR_df_list = list()
@@ -20,23 +32,25 @@ if (BCR | TCR){
     tsv_air_file <- list.files(plate_directory, pattern = paste0("^", plate_name, "_barcode_airr.tsv$"), full.names = TRUE)
     file_air_tsv <- read.csv(tsv_air_file, sep = '\t')
     
-    if (BCR){
+    if (PARAMS_BCR){
       # Separate information from data containing “IG” which corresponds to the BCR in the “v_call” column
-      bcr_df <- file_air_tsv[grepl("IG", file_air_tsv[[V_CALL]]), ]
+      bcr_df <- file_air_tsv[grepl("IG", file_air_tsv[[COLUMN_HEADER_V_CALL]]), ]
       # Storing sorted Trust4 data from BCRs in the list.
       BCR_df_list[[ plate_name]] = bcr_df
     }
     
-    if (TCR){
+    if (PARAMS_TCR){
       # Separate information from data containing “TR” which corresponds to the TCR in the “v_call” column
-      tcr_df <- file_air_tsv[grepl("TR", file_air_tsv[[V_CALL]]), ] 
+      tcr_df <- file_air_tsv[grepl("TR", file_air_tsv[[COLUMN_HEADER_V_CALL]]), ] 
       # Stores sorted Trust4 data from TCRs in the list.
       TCR_df_list[[ plate_name]] = tcr_df
     }
   }
 }
 
-####### Output of zUMIs #######
+###########################################################################################
+# ## 2. Preprocessing of zUMIs output data for analysis with preprocessed file output #####
+###########################################################################################
 
 # Initialize empty lists to store the dataframes for ERCC and RNA count data for each plate 
 ERCC_count_df_list = list()
@@ -71,11 +85,11 @@ for (plate_name in PLATES_LIST) {
   gene_id_data <- data_all_dense[!grepl("ERCC", rownames(data_all_dense)), ]
   
   # Define the output directory for the current plate
-  plate_output_directory <- file.path(PATH_ANALYSIS_OUTPUT, plate_name)
+  plate_output_directory <- file.path(PATH_ANALYSIS_OUTPUT, plate_name, '02_formatCountTable')
   
   # Create the output directory if it doesn't exist
   if (!dir.exists(plate_output_directory)) {
-    dir.create(plate_output_directory)
+    dir.create(plate_output_directory, recursive = TRUE)
   }
   
   # Save the wellbarcode and geneid before the modification of the gene name.
@@ -104,7 +118,7 @@ for (plate_name in PLATES_LIST) {
   
   # Replace column names with WellID using the barcode-to-well mapping from the cell_barcode_well_df
   # Create a mapping from BarcodeSequence to WellID
-  barcode_to_well <- setNames(CELL_BARCODE_WELL_DF[[WELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)
+  barcode_to_well <- setNames(CELL_BARCODE_WELL_DF[[COLUMN_HEADER_WELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)
   
   # Update the column names in gene_name_data and df_ERCC to use WellID
   colnames(gene_name_data) <- barcode_to_well[colnames(gene_name_data)]
@@ -119,7 +133,9 @@ for (plate_name in PLATES_LIST) {
   write.csv(df_ERCC, ERCC_count_table_output_file)
   write.csv(gene_name_data, file.path(plate_output_directory, paste0(plate_name, "_RNA_geneSymbol_wellName_count.csv")))
   
-  ########## Section for the Seurat object ########## 
+  ###########################################################
+  # ## 3. Recover zUMIs data for Seurat object creation ##### 
+  ###########################################################
   
   # Rename columns with the name of the plate and well together (Example: Plate_1_B7) for the object seurat
   colnames(gene_name_data_object_seurat) <- paste0(plate_name, "_", barcode_to_well[colnames(gene_name_data_object_seurat)])
@@ -127,7 +143,8 @@ for (plate_name in PLATES_LIST) {
   # Merge with global dataframe
   if (is.null(df_ARN_object_seurat)) {
     df_ARN_object_seurat <- gene_name_data_object_seurat
-  } else {
+  } 
+  else {
     # Merge by aligning rows by gene (row.names), keeping all columns
     df_ARN_object_seurat <- merge(df_ARN_object_seurat, gene_name_data_object_seurat,
                                   by = "row.names", all = TRUE)
@@ -149,27 +166,35 @@ if (!ERCC) {
 # This remains coherent because these are genes that have not been found, and therefore not expressed (even if the genes are not the base plates).
 df_ARN_object_seurat[is.na(df_ARN_object_seurat)] <- 0
 
-##### Retrieve metadata information for the seurat object #####
-if (METADATA){
+############################################################################
+# ## 4. Retrieve metadata information (gsf) for seurat object metadata #####
+############################################################################
+if (PARAMS_METADATA){
   df_metadata_object_seurat <- NULL
   for (plate_name in PLATES_LIST) {
+    # Skip plates marked as empty
+    if (plate_name %in% SKIPPED_PLATES_METADATA) {
+      next
+    }
     plate_sheet <- read_excel(PATH_GSF, sheet = plate_name)
-    
     # Delete rows where all columns are empty
-    well_col_index <- which(names(plate_sheet) == WELL_ID)
+    well_col_index <- which(names(plate_sheet) == COLUMN_HEADER_WELL_ID)
     other_cols <- plate_sheet[, -well_col_index, drop = FALSE]
     keep_rows <- apply(other_cols, 1, function(row) any(!is.na(row) & row != ""))
     plate_sheet <- plate_sheet[keep_rows, ]
     
+    # Change tible to data.frame
+    plate_sheet = as.data.frame( plate_sheet)
     # Create a new column containing the new column names( Plate_Name_WellID), then set the rows as columns for the seurat object.
-    plate_sheet$Plate_Well_ID <- paste0(plate_name, "_", plate_sheet[[WELL_ID]])
-    # Delete the WellID column, which no longer provides information for the seurat object.
-    plate_sheet[[WELL_ID]] <- NULL
-    
-    # Set dataframe long then wide
-    df_metadata_object_seurat_transform <- pivot_longer(plate_sheet, cols = -Plate_Well_ID,
-                                                        names_to = "Previous_Term_Column", values_to = "Value")
-    df_metadata_object_seurat_transform <- pivot_wider(df_metadata_object_seurat_transform, names_from = Plate_Well_ID, values_from = Value)
+    plate_sheet$Plate_Well_ID <- paste0(plate_name, "_", plate_sheet[[COLUMN_HEADER_WELL_ID]])
+    row.names(plate_sheet) = plate_sheet$Plate_Well_ID
+    # Delete the WellID column and Plate_Well_ID, which no longer provides information for the seurat object.
+    plate_sheet[[COLUMN_HEADER_WELL_ID]] = NULL
+    plate_sheet$Plate_Well_ID = NULL
+    # We transpose the data used to create the seurat object.
+    df_metadata_object_seurat_transform = data.table::transpose(plate_sheet)
+    names( df_metadata_object_seurat_transform) = row.names( plate_sheet)
+    row.names( df_metadata_object_seurat_transform) = names( plate_sheet)
     
     # Merge with global dataframe
     if (is.null(df_metadata_object_seurat)) {
@@ -177,40 +202,47 @@ if (METADATA){
     } else {
       # Merge by aligning rows by gene (row.names), keeping all columns
       df_metadata_object_seurat <- merge(df_metadata_object_seurat, df_metadata_object_seurat_transform,
-                                         by = "Previous_Term_Column", all = TRUE)
+                                         by = "row.names", all = TRUE)
     }
   } 
+  row.names(df_metadata_object_seurat) = df_metadata_object_seurat$Row.names
+  df_metadata_object_seurat$Row.names = NULL
 }
 
-##### Retrieve indexsort information (surface marker data) for seurat object #####
-
-if (INDEXSORT){
+####################################################################################
+# ## 5. Retrieve sort index information (FACS data) for seurat object metadata #####
+####################################################################################
+if (PARAMS_INDEXSORT){
   df_indexsort_object_seurat <- NULL
   for (plate_name in PLATES_LIST) {
+    # Skip plates marked as empty
+    if (plate_name %in% SKIPPED_INDEXSORT_PLATES) {
+      next
+    }
     path_index_sort_file <- file.path(PATH_EXPERIMENT_RAWDATA, "01_IndexSort", paste0(plate_name, "_indexsort.csv"))
-    
     # Automatic separator detection
     separator <- detect_sep_csv(path_index_sort_file)
-    
     # Read the file with the correct separator
     index_sort_df <- read.csv(path_index_sort_file, sep = separator, stringsAsFactors = FALSE)
     
     # Filter empty rows (except well column)
-    well_col_index <- which(names(index_sort_df) == WELL_ID)
+    well_col_index <- which(names(index_sort_df) == COLUMN_HEADER_WELL_ID)
     other_cols <- index_sort_df[ , -well_col_index, drop = FALSE]
     keep_rows <- apply(other_cols, 1, function(row) any(!is.na(row) & row != ""))
     index_sort_df <- index_sort_df[keep_rows, ]
     
+    # Change tible to data.frame
+    index_sort_df = as.data.frame( index_sort_df)
     # Create a new column containing the new column names( Plate_Name_WellID), then set the rows as columns for the seurat object.
-    index_sort_df$Plate_Well_ID <- paste0(plate_name, "_", index_sort_df[[WELL_ID]])
-    
-    # Delete the WellID column, which no longer provides information for the seurat object.
-    index_sort_df[[WELL_ID]] <- NULL
-    
-    # Pass dataframe in long format
-    df_indexsort_object_seurat_transform <- pivot_longer(index_sort_df, cols = -Plate_Well_ID, names_to = "Previous_Term_Column", values_to = "Value")
-    # Switch to wide format (columns = cells, rows = markers / values)
-    df_indexsort_object_seurat_transform <- pivot_wider(df_indexsort_object_seurat_transform, names_from = Plate_Well_ID, values_from = Value)
+    index_sort_df$Plate_Well_ID <- paste0(plate_name, "_", index_sort_df[[COLUMN_HEADER_WELL_ID]])
+    row.names(index_sort_df) = index_sort_df$Plate_Well_ID
+    # Delete the WellID column and Plate_Well_ID, which no longer provides information for the seurat object.
+    index_sort_df[[COLUMN_HEADER_WELL_ID]] = NULL
+    index_sort_df$Plate_Well_ID = NULL
+    # We transpose the data used to create the seurat object.
+    df_indexsort_object_seurat_transform = data.table::transpose(index_sort_df)
+    names( df_indexsort_object_seurat_transform) = row.names( index_sort_df)
+    row.names( df_indexsort_object_seurat_transform) = names( index_sort_df)
     
     # Merge with global dataframe
     if (is.null(df_indexsort_object_seurat)) {
@@ -218,32 +250,50 @@ if (INDEXSORT){
     } else {
       # Merge by aligning rows by gene (row.names), keeping all columns
       df_indexsort_object_seurat <- merge(df_indexsort_object_seurat, df_indexsort_object_seurat_transform,
-                                          by = "Previous_Term_Column", all = TRUE)
+                                          by = "row.names", all = TRUE)
     }
   } 
+  row.names(df_indexsort_object_seurat) = df_indexsort_object_seurat$Row.names
+  df_indexsort_object_seurat$Row.names = NULL
 }
 
-##### Creation of the seurat object with the previously created dataframes. #####
+########################################################################
+# ## 6. Create seurat object with sorted data (zUMIs and metadata) #####
+########################################################################
 
+## Select and create the metadata type for the seurat object, with or without index sort, and with or without metadata.
 # Merge the 2 dataframes (containing fluorescence (from FACS data) and metadata) into 1, if the option have metatada and indexsort file set to TRUE.
-if (METADATA & INDEXSORT){
-  df_metadata_indexsort_object_seurat = rbind( df_metadata_object_seurat[ colnames( df_ARN_object_seurat),],
-                                               df_indexsort_object_seurat[ colnames( df_ARN_object_seurat),])
+if (PARAMS_METADATA & PARAMS_INDEXSORT){
   
-  # On créer l'objet seurat avec aucune donnée normalisé ou scalé et les cell et feature minimum sont à 0, pour laisser le choix après coups.
-  FINAL_SEURAT_OBJECT = CreateSeuratObject( df_ARN_object_seurat, project = EXPERIMENT_NAME, assay = "RNA",
-                                            min.cells = 0, min.features = 0, names.field = 1,
-                                            names.delim = "_", meta.data = df_metadata_indexsort_object_seurat)
+  # Make sure columns are in the same order
+  common_columns <- intersect(colnames(df_metadata_object_seurat), colnames(df_indexsort_object_seurat))
+  
+  # Reorder columns and rbind
+  DATAFRAME_FOR_METADATA_SEURAT <- rbind(df_metadata_object_seurat[, common_columns],
+                                         df_indexsort_object_seurat[, common_columns])
   
   # Environment cleanup: removes temporary objects
-  rm(plate_sheet)
-  rm(df_ARN_object_seurat)
-  rm(gene_name_data_object_seurat)
   rm(df_metadata_object_seurat)
-  rm(well_col_index)
-  rm(other_cols)
-  rm(keep_rows)
   rm(df_metadata_object_seurat_transform)
+  rm(path_index_sort_file)
+  rm(separator)
+  rm(index_sort_df)
+  rm(df_indexsort_object_seurat_transform)
+  rm(df_indexsort_object_seurat)
+  rm(common_columns)
+}
+# Create the seurat object with only Metadata, depends on the option selected.
+if (PARAMS_METADATA &! PARAMS_INDEXSORT){
+  DATAFRAME_FOR_METADATA_SEURAT = df_metadata_object_seurat
+  
+  # Environment cleanup: removes temporary objects
+  rm(df_metadata_object_seurat)
+}
+# Create the seurat object with only IndexSort, depends on the option selected.
+if (PARAMS_INDEXSORT &! PARAMS_METADATA){
+  DATAFRAME_FOR_METADATA_SEURAT = df_indexsort_object_seurat
+  
+  # Environment cleanup: removes temporary objects
   rm(path_index_sort_file)
   rm(separator)
   rm(index_sort_df)
@@ -251,34 +301,16 @@ if (METADATA & INDEXSORT){
   rm(df_indexsort_object_seurat)
 }
 
-# Create the seurat object with only Metadata, depends on the option selected.
-if (METADATA &! INDEXSORT){
-  # Creates the seurat object.
-  FINAL_SEURAT_OBJECT = CreateSeuratObject( df_ARN_object_seurat, project = EXPERIMENT_NAME, assay = "RNA",
-                                            min.cells = 0, min.features = 0, names.field = 1,
-                                            names.delim = "_", meta.data = df_metadata_object_seurat)
-  
-  # Environment cleanup: removes temporary objects
-  rm(df_metadata_object_seurat)
-  rm(df_ARN_object_seurat)
-  rm(plate_sheet)
-  rm(well_col_index)
-  rm(other_cols)
-  rm(df_metadata_object_seurat_transform)
-  rm(keep_rows)
-}
+# Seurat object create with no normalized or scaled data, and the cell and feature minimums are set to 0, to leave the choice open afterwards.
+FINAL_SEURAT_OBJECT = CreateSeuratObject( df_ARN_object_seurat, project = EXPERIMENT_NAME, assay = "RNA",
+                                          min.cells = 0, min.features = 0, names.field = 1,
+                                          names.delim = "_", meta.data = DATAFRAME_FOR_METADATA_SEURAT)
 
-# Create the seurat object with only IndexSort, depends on the option selected.
-if (INDEXSORT &! METADATA){
-  # Creates the seurat object.
-  FINAL_SEURAT_OBJECT = CreateSeuratObject( df_ARN_object_seurat, project = EXPERIMENT_NAME, assay = "RNA",
-                                            min.cells = 0, min.features = 0, names.field = 1,
-                                            names.delim = "_", meta.data = df_indexsort_object_seurat)
-}
-
+PATH_DIRECTORY_ANALYSIS <- file.path(PATH_FLASHPIPE_OUTPUT, '04_Analysis')
 # Registers the seurat object.
-saveRDS( FINAL_SEURAT_OBJECT, file = file.path( PATH_ANALYSIS_OUTPUT, "complete_seurat_object.RDS"))
-
+saveRDS( FINAL_SEURAT_OBJECT, file = file.path( PATH_DIRECTORY_ANALYSIS, "complete_seurat_object.RDS"))
 
 # Environment cleanup: removes temporary objects
 rm(FINAL_SEURAT_OBJECT)
+rm(df_ARN_object_seurat)
+rm(gene_name_data_object_seurat)

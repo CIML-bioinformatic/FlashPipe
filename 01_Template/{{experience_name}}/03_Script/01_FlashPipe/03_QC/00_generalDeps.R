@@ -2,8 +2,15 @@
 # Global declarations and libraries for the analysis
 # ##################################################
 
-######## R Libraries
-######## Add here all the 'library( ...)' required for the analysis
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# General description of the code :
+# 1. Librairies set up
+# 2. Defining functions useful to the code
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+# #############################
+# ## 1. Librairies set up #####
+# #############################
 library( pander)
 library( digest)
 library( ggplot2)
@@ -16,10 +23,14 @@ library( viridis)
 library( readxl)
 library( SeuratObject)
 
-######## DEFINITION OF FUNCTIONS #########################
-######## Add here all the definition of functions
+# #################################################
+# ## 2. Defining functions useful to the code #####
+# #################################################
 
+
+# ##################################################
 # Function to sort and concatenate string components
+# ##################################################
 normalize_chain <- function(components) {
   # Sorts vector elements in alphabetical order
   sorted_components <- sort(components)
@@ -27,7 +38,9 @@ normalize_chain <- function(components) {
   return(paste(sorted_components, collapse = "_"))
 }
 
+# ########################################################################
 # Plate_plot function modified to allow iterative use within for loops.
+# ########################################################################
 simple_plate_plot = function (data, position, value, label, plate_size = 96, plate_type = "square", 
                               colour, limits, title, title_size, show_legend = TRUE, legend_n_row, 
                               label_size, silent = TRUE, scale) 
@@ -190,9 +203,22 @@ simple_plate_plot = function (data, position, value, label, plate_size = 96, pla
   plot
 }
 
-######## Generate a datatable summarizing values
-# For environments (parameters), all values/variables are shown
+# #####################################################################################################
+# Function to read csv files according to their separator. (Particularly for sort indexes)
+# #####################################################################################################
+detect_sep_csv <- function(file_path) {
+  first_line <- readLines(file_path, n = 1)
+  if (length(grep(";", first_line))) {
+    return(";")
+  } else {
+    return(",")
+  }
+}
 
+# ########################################################################
+# ####### Generate a datatable summarizing values
+# ####### For environments (parameters), all values/variables are shown
+# ########################################################################
 showSimpleDT = function( dataToShow, rownames = TRUE, colnames = "Value")
 {
   valuesDF = NULL;
@@ -228,14 +254,4 @@ showSimpleDT = function( dataToShow, rownames = TRUE, colnames = "Value")
                             scrollX = TRUE,
                             scrollY = "525px",
                             stateSave = TRUE));
-}
-
-# Function to read csv files according to their separator. (Particularly for sort indexes)
-detect_sep_csv <- function(file_path) {
-  first_line <- readLines(file_path, n = 1)
-  if (length(grep(";", first_line))) {
-    return(";")
-  } else {
-    return(",")
-  }
 }

@@ -5,6 +5,18 @@
 
 ## @knitr compute_Feature_Number
 
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# General description of the code :
+# 1. Pre-processing and feature number calculation of ERCC RNA data from zUMIs
+# 2. Creation of general graph of ERCC UMI RNA data
+# 3. Creation of Upset Plot of ERCC UMI RNA data
+# 4. Creation of plate-by-plate graph of ERCC RNA data for UMIs
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+# #####################################################################################
+# ## 1. Pre-processing and feature number calculation of ERCC RNA data from zUMIs #####
+# #####################################################################################
+
 ### The aim is to analyze all the features present in the data
 ### to produce 3 figures, a general graph for all plates
 ### a figure for each of the plates, and an Upset Plot (which groups the
@@ -39,16 +51,16 @@ for (plate_name in levels(PLATES_LIST)) {
   
 }
 
-## ....................................................
-## dotplot for all the plate with feature count
-## ....................................................
+# ##########################################################
+# ## 2. Creation of general graph of ERCC UMI RNA data #####
+# ##########################################################
 
 # Separates in the dataframe all features_count by levels, i.e. each plate name
-all_RNA_feature_count[, PLATE_NAME] = factor(all_RNA_feature_count[,PLATE_NAME], levels = levels(PLATES_LIST))
+all_RNA_feature_count[, COLUMN_HEADER_PLATE_NAME] = factor(all_RNA_feature_count[,COLUMN_HEADER_PLATE_NAME], levels = levels(PLATES_LIST))
 
 # Dot plot for feature count
-plot_all_RNA_feature_count <- ggplot(all_RNA_feature_count, aes(x = .data[[PLATE_NAME]], y = feature_count)) + 
-  geom_violin(aes(fill = .data[[PLATE_NAME]])) + 
+plot_all_RNA_feature_count <- ggplot(all_RNA_feature_count, aes(x = .data[[COLUMN_HEADER_PLATE_NAME]], y = feature_count)) + 
+  geom_violin(aes(fill = .data[[COLUMN_HEADER_PLATE_NAME]])) + 
   geom_jitter(width = 0.2) +
   stat_summary(fun = "mean", geom = "crossbar", colour = "red", linewidth = 0.5, width = 0.08, aes(linetype = "Mean", group = 1)) + 
   stat_summary(fun = "median", geom = "crossbar", colour = "orange", linewidth = 0.5, width = 0.08, aes(linetype = "Median", group = 1)) +
@@ -61,9 +73,9 @@ plot_all_RNA_feature_count <- ggplot(all_RNA_feature_count, aes(x = .data[[PLATE
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 print(plot_all_RNA_feature_count)
 
-## ....................................................
-## upset plot for the feature of all the plate
-## ....................................................
+# #######################################################
+# ## 3. Creation of Upset Plot of ERCC UMI RNA data #####
+# #######################################################
 
 cat("\n \n")
 cat("<b>Number total of gene through all the plates : ", length( all_features_set), "</b>.\n \n", sep = '')
@@ -96,9 +108,9 @@ print(upset_plot)
 
 cat("\n \n")
 
-## ....................................................
-## Plotplate for each plate 
-## ....................................................
+# ######################################################################
+# ## 4. Creation of plate-by-plate graph of ERCC RNA data for UMIs #####
+# ######################################################################
 
 # Compute the minimum and maximum values of ERCC to set a common range on figures
 rna_feature_count_min = min( all_RNA_feature_count$feature_count)
@@ -121,7 +133,11 @@ for (plate_name in levels(PLATES_LIST)) {
   print( plot_plate_feature_Count)
   
   # Save the plot to file
-  plate_output_directory <- file.path(PATH_ANALYSIS_OUTPUT, plate_name)
+  plate_output_directory <- file.path(PATH_ANALYSIS_OUTPUT, plate_name, '06_computeFeatureNumber')
+  # Create the output directory if it doesn't exist
+  if (!dir.exists(plate_output_directory)) {
+    dir.create(plate_output_directory, recursive = TRUE)
+  }
   path_output_plot_feature_count <- file.path(plate_output_directory, paste0("PlatePlot_feature_Count_", plate_name, ".png"))
   ggsave(path_output_plot_feature_count, plot = plot_plate_feature_Count)
 } 
