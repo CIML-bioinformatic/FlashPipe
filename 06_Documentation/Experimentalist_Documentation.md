@@ -25,7 +25,7 @@ Chaque onglet décrivant une plaque doit contenir un tableau représentant le **
 #### Consignes :
 
 - La **première colonne** doit obligatoirement s’appeler **`WellID`** (respecter les majuscules/minuscules). Dans cette colonne doit apparaitre l'ID du puits (A1, A2, A3...).
-- Les **noms de colonnes** suivants ne doivent contenir **ni caractères spéciaux**, **ni espaces** : utilisez uniquement des **lettres**, **chiffres**, le caractère **`_`** (underscore) et le caractère **`-`** (tiret).
+- Les **noms de colonnes** suivants ne doivent contenir **ni caractères spéciaux**, **ni espaces** : utilisez uniquement des **lettres**, **chiffres**, le caractère **`_`** (underscore).
 - Le nom et l'ordre des colonnes est libre, mais **ces noms de colonnes doivent être les mêmes dans tous les onglets décrivant les plaques**.
 - Les **cellules en dehors du tableau** (hors plan de plaque) doivent rester **vides** (il arrive parfois qu'en cas de copier/coller d'une GSF précédente, des cellules contiennent encore de l'information).
 - Si **une donnée n’est disponible** pour un **puits**, laissez simplement la cellule **vide** (ne pas remplir avec des zéros ou des mentions du type `"NA"`). Si **un puits n'a aucune information associée**, vous pouvez soit créer une ligne vide en mettant l'ID du puits en premiere colonne et rien ensuite, soit ne pas faire apparaitre la ligne de ce puits.
@@ -65,7 +65,6 @@ Les données de FACS doivent être fournies dans de multiples fichiers Excel au 
 
 - La **première colonne** doit s’appeler **`WellID`** et contenir l'ID des puits  (A1, A2, A3...).
 - Les nom des colonnes contenant des données **linéaires** (pas de transformation `asinh`) doivent commencer par **`Lin_`**, voir l'exemple ci-dessous
-- Les colonnes contenant des données numériques qui ne doivent pas subir de transformation `asinh`, doivent commencer par le préfixe **`Lin_`** (pour indiquer qu'il s'agit de données linéaires, voir l'exemple ci-dessous. 
 - Les **noms de colonnes** ne doivent contenir **ni caractères spéciaux**, **ni espaces** : utilisez uniquement des **lettres**, **chiffres**, le caractère **`_`** (underscore) et le caractère **`-`** (tiret).
 - Le nom et l'ordre des colonnes est libre, **à condition que les noms soient strictement identiques entre les plaques** (donc entre les fichiers d'index sort).
 - **Lister explicitement** les colonnes qui **ne sont pas** des données d’indexsort (par exemple : `Time`, `SortPheno`, etc.), pour les transmettre au bioinformaticien en charge de l'analyse.

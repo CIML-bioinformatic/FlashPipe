@@ -15,8 +15,8 @@ Ce document décrit l’utilisation et la structure du pipeline d’analyse **Fl
 
 ### Étape 0 : Initialisation
 
-1. Copier le dossier `02_Config` dans un nouveau projet.
-2. Renommer `PROJECT_NAME` et `EXPERIMENT_NAME`.
+1. Copier le __contenue__ du dossier `02_Config` dans un nouveau projet (et ne rien créer/ajouter de plus).
+2. Renommer `EXPERIMENT_NAME` qui doit se trouver dans votre projet.
 3. Modifier et remplir `config_FlashPipe.yml` :
    - Noms des plaques
    - Mode (single-cell / mini-bulk)
@@ -26,24 +26,23 @@ Ce document décrit l’utilisation et la structure du pipeline d’analyse **Fl
 
 ### Étape 1 : Génération de la structure (Copier)
 
-1. Se positionner dans EXPERIMENT_NAME.
-2. Créer un environnement virtuel :
+1. Se connecter à un Gauss (serveur de calcul).
+2. Se positionner dans EXPERIMENT_NAME.
+3. Créer un environnement virtuel :
    - virtualenv <NOM_ENVIRONNEMENT_VIRTUELLE>
    - source <NOM_ENVIRONNEMENT_VIRTUELLE>/bin/activate
    - pip install snakemake
    - pip install pulp==2.7.0
-3. Lancer la commande : TEMPLATE_PATH=/mnt/DOSI/PLATEFORMES/BIOINFORMATIQUE/01_COMMON_DATA/04_TOOLS/01_FlashPipe/01_Template/
-4. Lancer la commande : snakemake -j 1 --config template_path=${TEMPLATE_PATH} --snakefile "${TEMPLATE_PATH}/{{experience_name}}/{{workflow_name}}/01_snakemake/snakefile_copier.yaml" --use-singularity --singularity-args "-B /mnt:/mnt" --dryrun
-5. Lancer la commande sans --dryrun, si aucune erreur n'est présente.
+4. Lancer la commande : TEMPLATE_PATH=/mnt/DOSI/PLATEFORMES/BIOINFORMATIQUE/01_COMMON_DATA/04_TOOLS/01_FlashPipe/01_Template/
+5. Lancer la commande : snakemake -j 1 --config template_path=${TEMPLATE_PATH} --snakefile "${TEMPLATE_PATH}/{{experience_name}}/04_Workflow/01_snakemake/snakefile_copier.yaml" --use-singularity --singularity-args "-B /mnt:/mnt" --dryrun
+6. Lancer la commande sans --dryrun, si aucune erreur n'est présente.
 
 ### Étape 2 : Utilisation des outils et générations de l'analyse QC
 Lancer les outils et l'analyse QC :
 
-1. Se connecter à un Gauss.
-2. Se positionner dans EXPERIMENT_NAME.
-3. Activer l'environnement virtuel dans Gauss
-4. Lancer la commande : snakemake -j 1 --snakefile 04_Workflow/01_snakemake/snakefile.yaml --use-singularity --singularity-args "-B /mnt:/mnt -B /tmp:/tmp" --dryrun
-5. Lancer la commande sans --dryrun, si aucune erreur n'est présente.
+1. __Pré requis__ : Être connecté à Gauss (serveur de calcul), être positionné dans EXPERIMENT_NAME et avoir l'environnement virtuel activé.
+2. Lancer la commande : snakemake -j 1 --snakefile 04_Workflow/01_snakemake/snakefile.yaml --use-singularity --singularity-args "-B /mnt:/mnt -B /tmp:/tmp" --dryrun
+3. Lancer la commande sans --dryrun, si aucune erreur n'est présente.
 
 ---
 
