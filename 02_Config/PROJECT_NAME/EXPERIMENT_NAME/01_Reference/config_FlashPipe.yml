@@ -19,49 +19,49 @@
 # Possible values : human or mouse
 # Example: species: mouse
 # ...........................................................
-species: mouse
+species: 
 
 # 
 # Provide the name of the experiment
 # The value must be a single name
 # Example: experience_name: 250114_VH00228_245_AAGJWKNM5
 # ...........................................................
-experience_name: 250114_VH00228_245_AAGJWKNM5
+experience_name: 
 
 # 
 # Provide the names of the plates to process
 # The list should be comma separated, without spaces
 # Example: plate_names: P1_H9C0U2GX,P2_H9K0J2WY,P3_H9K0J2W2,P10_H9C0U2GS
 # ...........................................................
-plate_names: P1_H9C0U2GX,P2_H9K0J2WY,P3_H9K0J2W2,P10_H9C0U2GS
+plate_names: 
 
 # 
 # Provide the type of method used
 # Possible values : single-cell or minibulk
 # Example: method_analysis: single-cell
 # ...........................................................
-method_analysis: single-cell
+method_analysis: 
 
 # 
 # Provide the path to the GSF excel file
 # The path must be an absolute path to the xlsx file
 # Example: gsf_file: /mnt/DOSI/PMLAB/BIOINFO/DATA/Genomics/250114_VH00228_245_AAGJWKNM5/250107_GenomicsSubmissionForm.xlsx
 # ...........................................................
-gsf_file: /mnt/DOSI/PMLAB/BIOINFO/DATA/Genomics/250114_VH00228_245_AAGJWKNM5/250107_GenomicsSubmissionForm.xlsx
+gsf_file: 
 
 # 
 # Indicate of GSF file contains metadata on plates to analyse
 # Possible value for parameter : yes or no
 # Example: metadata_analysis: yes
 # ...........................................................
-metadata_analysis: yes
+metadata_analysis:
 
 # 
 # Provide the path to the folder containing the fastq
 # The path must be an absolute path to the folder
 # Example: fastq_directories: /mnt/DOSI/PMLAB/BIOINFO/DATA/Genomics/250114_VH00228_245_AAGJWKNM5/Analysis/1/Data/fastq
 # ...........................................................
-fastq_directories: /mnt/DOSI/PMLAB/BIOINFO/DATA/Genomics/250114_VH00228_245_AAGJWKNM5/Analysis/1/Data/fastq
+fastq_directories: 
 
 # 
 # Indicate if BCR and/or TCR repertoire must be analyzed
@@ -69,8 +69,8 @@ fastq_directories: /mnt/DOSI/PMLAB/BIOINFO/DATA/Genomics/250114_VH00228_245_AAGJ
 # Example: bcr_repertoire_analysis: yes
 #          tcr_repertoire_analysis: no
 # ...........................................................
-bcr_repertoire_analysis: yes
-tcr_repertoire_analysis: no
+bcr_repertoire_analysis: 
+tcr_repertoire_analysis: 
 
 # 
 # Indicate if indexsort data are available for analysis, the path to the data folder if any 
@@ -81,11 +81,12 @@ tcr_repertoire_analysis: no
 #   fluorescent measures
 # Example: index_sort_analysis: yes
 #          index_sort: /mnt/DOSI/MASTER_TEMP/CB2M/Test/Flash5Pipe_Training/01_Resource/index_sort
-#          categoriale_term_set : Time,SortPheno,FlowJo_Pheno,Specificity
+#          not_fluorescent : Time,SortPheno,FlowJo_Pheno,Specificity
+# The “not_fluorescent” category is the name of the set of columns that are not fulorescent should be written here.
 # ...........................................................
-index_sort_analysis: yes
-index_sort: /mnt/DOSI/MASTER_TEMP/CB2M/Test/Flash5Pipe_Training/01_Resource/index_sort
-categoriale_term_set : Time,SortPheno,FlowJo_Pheno,Specificity
+index_sort_analysis: 
+index_sort: 
+not_fluorescent : 
 
 
 
