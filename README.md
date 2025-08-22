@@ -168,7 +168,7 @@ To retrieve the data:
 - Concerning the `01_Template`:
 	- We will call `TEMPLATE_DIR` the path to the folder `01_Template` in this folder. In the following steps, when you will see the syntax `<TEMPLATE_DIR>` in a command, replace this string by the path of the `TEMPLATE_DIR` folder.
 	- Download the zenodo zip file of Singularity images from [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15516231.svg)](https://doi.org/10.5281/zenodo.15516231).
-	- Copy the zip file to the folder `<TEMPLATE_DIR>` and unzip it. It will override the `02_Container` subfolder and add the Singularity SIF files.
+	- Copy the zip file to the folder `<TEMPLATE_DIR>/{{experience_name}}` and unzip it. It will create/override the `02_Container` subfolder and add the Singularity SIF files and other tools files.
 - Concerning the `02_Config`:
 	- Copy the contents of the `02_Config` folder into the directory in which you place your projects.
 	- Rename the subfolders `PROJECT_NAME` and `EXPERIMENT_NAME` with the respective names of the experiment project to be analysed.

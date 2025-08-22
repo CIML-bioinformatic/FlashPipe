@@ -29,7 +29,7 @@ rule organize_structure:
   	copier_config = TEMPLATE_PATH + "/copier.yml",
   	user_config = "01_Reference/config_FlashPipe.yml"
   output:
-  	zUMIs_tool_zip = "02_Container/zUMIs/zUMIS-2.9.7.zip"
+  	zUMIs_tool_zip = "02_Container/zUMIs/zUMIs-2.9.7.zip"
   params: 
   	template_path = TEMPLATE_PATH,
   	experience_path = TEMPLATE_PATH + "/\{\{experience_name\}\}",
