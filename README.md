@@ -152,7 +152,7 @@ Where :
 ## Launching the pipeline
 
 
-### Step 1 : Download the template
+### Step 1 : Preparation the FlashPipe template
 
 This setp allows you to retrieve the complete structure of files you need to run the pipeline. Note that this structure is a template
 that is not intend to be used directly since in contains variables names that will be adapted to your specific case.
@@ -164,67 +164,82 @@ This structure is divided in two types of files:
 
 To retrieve the data:
 
-- Clone the gitbub repository to a new folder. You will see two folders `01_Template` and `02_Config`.
+- Clone the gitbub repository to a new folder. You will see three folders `01_Template`, `02_Config` and `06_Documentation`.
 - Concerning the `01_Template`:
-	- We will call `TEMPLATE_DIR` the path to the folder `01_Template` in this folder. In the following steps, when you will see the syntax `<TEMPLATE_DIR>` in a command, replace this string by the path of the `TEMPLATE_DIR` folder.
-	- Download the zenodo zip file of Singularity images from [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15516231.svg)](https://doi.org/10.5281/zenodo.15516231).
-	- Copy the zip file to the folder `<TEMPLATE_DIR>/{{experience_name}}` and unzip it. It will create/override the `02_Container` subfolder and add the Singularity SIF files and other tools files.
-- Concerning the `02_Config`:
-	- Copy the contents of the `02_Config` folder into the directory in which you place your projects.
-	- Rename the subfolders `PROJECT_NAME` and `EXPERIMENT_NAME` with the respective names of the experiment project to be analysed.
+   - We will call `TEMPLATE_DIR` the path to the folder `01_Template` in this folder. In the following steps, when you will see the syntax `<TEMPLATE_DIR>` in a command, replace this string by the path of the `TEMPLATE_DIR` folder.
+   - Download the zenodo zip file of Singularity images from [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.15516231.svg)](https://doi.org/10.5281/zenodo.15516231).
+   - Copy the zip file to the folder `<TEMPLATE_DIR>/{{experience_name}}` and unzip it. It will create/override the `02_Container` subfolder and add the Singularity SIF files and other tools files.
+   - Download the zenodo zip file of the Genome files from (TODO Add Zenodo DOI) and unzip it in a safe location. Those files will be used by all the FlashPipe runs, so they can be shared. In the following, the syntax `<GENOME_DIR>` will indicate the path you choose to unzip the zip file.
 
 
-### Step 2: Initialisation
+### Step 2: Customisation of the config file
 
-3. In `<PROJECT_NAME>/<EXPERIMENT_NAME>/01_Reference`, modify the `config_FlashPipe.yml` file according to your needs:
-   - Add the list of `Plate names`
-   - Choose the analysis `Mode` (single-cell / mini-bulk)
-   - Choose if you need `BCR/TCR` analsyis
-   - Add the paths to `FASTQ`, `FACS`, `GSF` files according to your needs
-   - Choose the `Species` (human / mouse)
+- Choose a folder where to create your project. In the following the syntax `<PROJECTS_FOLDER>` will be use to indicate the path of the chosen folder.
+- Copy the contents of the `<TEMPLATE_DIR>/02_Config` folder into the directory `<PROJECTS_FOLDER>`.
+- Rename the subfolders `PROJECT_NAME` and `EXPERIMENT_NAME` with the respective names of the project and experiment to be analysed.
 
-### Step 3: Generating the file structure
+Note 1: if a project folder already exists, just copy the `EXPERIMENT_NAME` folder in it.
 
-1. Go to `<PROJECT_NAME>/<EXPERIMENT_NAME>` folder.
+Note 2: in the following the syntax `<PROJECT_NAME>` will be use to indicate the name of your project folder and the syntax `<EXPERIMENT_NAME>` to indicate the name of your experiment folder.
 
-2. Create a virtual environment:
+- In `<PROJECTS_FOLDER>/<PROJECT_NAME>/<EXPERIMENT_NAME>/01_Reference`, modify the `config_FlashPipe.yml` file according to your needs. 
+   - In the "User variables" section, you will find sereral entries to fill. Read the comment above each field and provide the right information
+   - In the "Expert variables" section, modify the path of the genome files in the `star_index` and in the `gtf_file` entries to match the path to the `<GENOME_DIR>`.
+
+### Step 3: Generation of the file structure
+
+1. Go to `<PROJECTS_FOLDER>/<PROJECT_NAME>/<EXPERIMENT_NAME>` folder.
+
+2. Create a virtual environment (replace :
 ```
-virtualenv <VENV_NAME>
-source <VENV_NAME>/bin/activate
+virtualenv FlashPipeVenv
+source FlashPipeVenv/bin/activate
 pip install snakemake
 pip install pulp==2.7.0
 ```
 
-3. Launch the command : 
+3. Launch the command (replace `<TEMPLATE_DIR>` by the path to the FlashPipe template): 
 ```
 TEMPLATE_PATH=<TEMPLATE_DIR>
 ```
 
-4. Launch the command : 
+4. Launch the command, replacing <ROOT_PATH> by the path of the folder containing both the `<TEMPLATE_DIR>`, the `<PROJECTS_FOLDER>` and the `<GENOME_DIR>`: 
+
 ```
-snakemake -j 1 --config template_path=${TEMPLATE_PATH} --snakefile "${TEMPLATE_PATH}/{{experience_name}}/{{workflow_name}}/01_snakemake/snakefile_copier.yaml" --use-singularity --singularity-args "-B /mnt:/mnt" --dryrun
+snakemake -j 1 --config template_path=${TEMPLATE_PATH} --snakefile "${TEMPLATE_PATH}/{{experience_name}}/{{workflow_name}}/01_snakemake/snakefile_copier.yaml" --use-singularity --singularity-args "-B <ROOT_PATH>:<ROOT_PATH>" --dryrun
 ```
 
-5. Run the command without --dryrun, if no error is present.
+You should see as a result:
 
-### Step 4: Use of tools and generation of QC analysis
+```
+Job stats:
+job                   count
+------------------  -------
+all                       1
+organize_structure        1
+total                     2
+```
 
-CAUTION: This step performs important calculations. It must be run on a calculation server.
+5. Run the same command without the `--dryrun` option if no error is raised.
 
-To run the tools and QC analysis :
 
-1. Go to `<PROJECT_NAME>/<EXPERIMENT_NAME>`
+### Step 4: Execution of the analysis
+
+CAUTION: This step performs important calculations. It must be run on a computation server or a cluster.
+
+This step will execute zUMIs to analyze the transcriptome, Trust4 or Airrflow to analyze the BCR/TCR repertoire (if required), generate a Qaulity Control report and produce a RDS file containing a Seurat object with all the analyzed data.
+
+1. Change dir to `<PROJECTS_FOLDER>/<PROJECT_NAME>/<EXPERIMENT_NAME>`
 
 2. Run the command :
 
 ```
-snakemake -j 1 --snakefile 04_Workflow/01_snakemake/snakefile.yaml --use-singularity --singularity-args "-B /mnt:/mnt -B /tmp:/tmp" --dryrun
+snakemake -j 1 --snakefile 04_Workflow/01_snakemake/snakefile.yaml --use-singularity --singularity-args "-B <ROOT_PATH>:<ROOT_PATH> -B /tmp:/tmp" --dryrun
 ```
 
-3. Run the command without the `--dryrun` option, if there are no errors:
+You should see the jobs stats to execute. The number of jobs depends on the number of plate libraries.
 
-```
-snakemake -j 1 --snakefile 04_Workflow/01_snakemake/snakefile.yaml --use-singularity --singularity-args "-B /mnt:/mnt -B /tmp:/tmp"
-```
+3. Run the same command without the `--dryrun` option, if no error is raised:
+
 
 
