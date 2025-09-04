@@ -15,7 +15,8 @@ import shutil
 # 6. Modifies the templave config file (copier.yml) with the new values.
 # 7. Runs Copier on the template to create the necessary directories and files.
 # 8. Copy Index Sorting and GSF files.
-# 9. Check if every file is correctly copied/created by Copier or not.
+# 9. Calls the function to generate the file containing the analysis information for Airrflow.
+# 10. Check if every file is correctly copied/created by Copier or not.
 # ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
 # ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
@@ -56,12 +57,14 @@ PATH_RNA = os.path.join(PATH_RAWDATA, '00_RNA/')
 PATH_INDEX_SORTING = os.path.join(PATH_RAWDATA, '01_IndexSort/')
 PATH_EXPERIMENT_REFERENCE = os.path.join(PATH_REFERENCE, '00_Experiment/')
 PATH_ZUMIS_REFERENCE = os.path.join(PATH_REFERENCE, '01_zUMIs/')
-PATH_TRUST4_REFERENCE = os.path.join(PATH_REFERENCE, '02_trust4/')
+PATH_AIRRFLOW_REFERENCE = os.path.join(PATH_REFERENCE, '02_airrflow/')
 PATH_OUTPUT_FLASHPIPE = os.path.join(PATH_OUTPUT, '01_FlashPipe/')
 PATH_OUTPUT_ZUMIS = os.path.join(PATH_OUTPUT_FLASHPIPE, '01_zUMIs/')
+PATH_OUTPUT_AIRRFLOW = os.path.join(PATH_OUTPUT_FLASHPIPE, '02_airrflow/')
 PATH_OUTPUT_TRUST4 = os.path.join(PATH_OUTPUT_FLASHPIPE, '02_trust4/')
 PATH_OUTPUT_QC = os.path.join(PATH_OUTPUT_FLASHPIPE, '03_QC/')
 PATH_OUTPUT_ANALYSIS = os.path.join(PATH_OUTPUT_FLASHPIPE, '04_Analysis/')
+
 # •••••••••••••••••
 
 # •••••••••••••••••
@@ -83,12 +86,12 @@ INDEXSORT = "index_sort_analysis"
 BCR = "bcr_repertoire_analysis"
 TCR = "tcr_repertoire_analysis"
 METADATA = "metadata_analysis"
+TOOLS_BCR_TCR_ANALYSIS = "tools_bcr_tcr_analysis"
 # •••••••••••••••••
 
 # Import the custom library and functions
 sys.path.append(os.path.join(PATH_EXPERIENCE, "03_Script/01_FlashPipe/00_organizeStructure/"))
-from create_folder_structure_function import open_file_yml, verify_empty_values_config_file, verify_name_experience_path_and_config_file, verify_separator_in_config_file, verify_file_exist, replace_value_config_template_copier, verify_parameters, prepare_fastq_symlinks_and_paths, verify_method, copy_index_sort, copy_gsf
-
+from create_folder_structure_function import open_file_yml, verify_empty_values_config_file, verify_name_experience_path_and_config_file, verify_separator_in_config_file, verify_file_exist, replace_value_config_template_copier, verify_parameters, prepare_fastq_symlinks_and_paths, verify_method, copy_index_sort, copy_gsf, airrflow_parameter, generate_airrflow_samplesheet
 
 # ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 # ## 2. Loading the configuration file (config FlashPipe)
@@ -123,6 +126,10 @@ verify_separator_in_config_file(file_config_flashpipe.get(NOT_FLUORESCENT), str_
 # Recovers plate names from configuration and cleans them up (deletes spaces).
 plates_list = file_config_flashpipe.get(PLATE_NAMES_FILE).split(',')
 plates_list = [plate.strip() for plate in plates_list]
+
+#PATH_CONFIG_AIRRFLOW = '/mnt/DOSI/MASTER_TEMP/CB2M/Test/Test_Airrflow_v1/01_Reference/config_FlashPipe.yml'
+#CONFIG_FILE_AIRRFLOW = open_file_yml(PATH_CONFIG_AIRRFLOW)
+#CONFIG_FILE_AIRRFLOW.get(BCR)
 
 # Check if the parameter are the type of True or False / Single-cell or Mini Bulk for the analysis
 print("•••••Parameters selection•••••")
@@ -160,6 +167,9 @@ BARCODE_WELL_PATH = os.path.join(PATH_EXPERIMENT_REFERENCE, 'cell_barcode_well.c
 BARCODE_PATH = os.path.join(PATH_EXPERIMENT_REFERENCE, "cell_barcode.txt")
 GSF_FILE_PATH = os.path.join(PATH_EXPERIMENT_REFERENCE, os.path.basename(file_config_flashpipe.get(GSF_FILE)))
 
+# Select the parameter for the analysis for Airrflow
+CLONAL_PARAMETER_AIRRFLOW = airrflow_parameter(file_config_flashpipe)
+
 # •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 # ## 5. Creates a dictionary with the values from the config file for the copier.yml file
 # •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
@@ -188,7 +198,10 @@ values_config_flashpipe = {
     'index_sort_analysis' : indexsort,
     'bcr_repertoire_analysis' : bcr,
     'tcr_repertoire_analysis' : tcr,
-    'metadata_analysis' : metadata
+    'metadata_analysis' : metadata,
+    'airrflow_or_trust4' : file_config_flashpipe.get(TOOLS_BCR_TCR_ANALYSIS),
+    'path_output_airrflow' : PATH_OUTPUT_AIRRFLOW,
+    'clonal_parameter_airrflow' : CLONAL_PARAMETER_AIRRFLOW
 }
 
 # Copier le tempalte dans le tmp pour permettre de modifier le fichier copier.yml (et d'éviter les conflits sur un même fichier)
@@ -211,10 +224,10 @@ print("Create directories and files structure, might take few minutes...")
 cmd = f'copier copy -f {PATH_TMP_FLASHPIPE_TEMPLATE} {PATH_PROJECT_FLASH_PIPE}'
 subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-# Copier le Container qui à étais interdis d'importer (dans le template) dans le project
+# Copy the Container that was forbidden to import (in the template) into the project
 shutil.copytree(PATH_CONTAINER_TEMPLATE, PATH_CONTAINER, dirs_exist_ok=True)
 
-# Suprimez le template temporaire situer dans le tmp.
+# Delete the temporary template located in the tmp.
 shutil.rmtree(PATH_TMP_FLASHPIPE)
 
 # Create a file barcode (without well ID) for zUMIs.
@@ -233,7 +246,18 @@ if file_config_flashpipe.get(INDEX_SORT_FILE) != "FALSE" :
 copy_gsf(file_config_flashpipe.get(GSF_FILE), PATH_EXPERIMENT_REFERENCE)
 
 # •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
-# ## 9. Check if every file is correctly copied/created by Copier.
+# ## 9. Calls the function to generate the file containing the analysis information for Airrflow.
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+# Path to the .tsv file already copied and msi in place in the project
+CSV_AIRRFLOW_PATH = os.path.join(PATH_AIRRFLOW_REFERENCE, "assembled_samplesheet.tsv")
+
+generate_airrflow_samplesheet(path_airrflow_reference=CSV_AIRRFLOW_PATH, plates_list=plates_list,
+                              fastq_files_read1=fastq_files_read1, fastq_files_read2=fastq_files_read2,
+                              species=species, file_config_flashpipe=file_config_flashpipe)
+
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# ## 10. Check if every file is correctly copied/created by Copier.
 # •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 verify_file_exist(ERCC_PATH)
 verify_file_exist(BARCODE_WELL_PATH)
@@ -242,6 +266,7 @@ verify_file_exist(os.path.join(PATH_EXPERIENCE, '03_Script/01_FlashPipe/03_QC/an
 verify_file_exist(os.path.join(PATH_EXPERIENCE, '03_Script/01_FlashPipe/projectParams.R'))
 verify_file_exist(os.path.join(PATH_EXPERIMENT_REFERENCE, os.path.basename(file_config_flashpipe.get(GSF_FILE))))
 verify_file_exist(os.path.join(PATH_WORKFLOW, '01_snakemake/snakefile.yaml'))
+verify_file_exist(CSV_AIRRFLOW_PATH)
 
 print("Success : The project structure is now in place.")
 

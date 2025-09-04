@@ -44,14 +44,9 @@ if (ERCC) {
   }
   # Display errors if any were found 
   if (length(plate_errors_ERCC_UMI_percent) > 0) {
-    # Creates a header
-    header <- "\n============== ERROR(S) DETECTED IN SOME OUTPUT FROM SCRIPT '03_computeERCCUMIPercent' ==============\n"
-    # Numbering of all errors found in this section
-    error_list <- paste0(seq_along(plate_errors_ERCC_UMI_percent), ". ", plate_errors_ERCC_UMI_percent, collapse = "\n")
-    # Final message
-    full_message <- paste0(header, error_list, "\n================================================================================================\n")
-    # Displays and stops
-    stop(full_message)
+    cat("\n••••• ERROR DETECTED IN SOME OUTPUT FROM SCRIPT '03_computeERCCAccuracy' •••••\n")
+    cat(plate_errors_ERCC_UMI_percent, "\n")
+    stop("Some error has been detecting. Stop analysis")
   }
   
   # Environment cleanup: removes temporary objects

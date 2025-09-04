@@ -206,7 +206,7 @@ TEMPLATE_PATH=<TEMPLATE_DIR>
 4. Launch the command, replacing <ROOT_PATH> by the path of the folder containing both the `<TEMPLATE_DIR>`, the `<PROJECTS_FOLDER>` and the `<GENOME_DIR>`: 
 
 ```
-snakemake -j 1 --config template_path=${TEMPLATE_PATH} --snakefile "${TEMPLATE_PATH}/{{experience_name}}/{{workflow_name}}/01_snakemake/snakefile_copier.yaml" --use-singularity --singularity-args "-B <ROOT_PATH>:<ROOT_PATH>" --dryrun
+snakemake -j 1 --config template_path=${TEMPLATE_PATH} --snakefile "${TEMPLATE_PATH}/{{experience_name}}/04_Workflow/01_snakemake/snakefile_copier.yaml" --use-singularity --singularity-args "-B <ROOT_PATH>:<ROOT_PATH>" --dryrun
 ```
 
 You should see as a result:
@@ -237,7 +237,19 @@ This step will execute zUMIs to analyze the transcriptome, Trust4 or Airrflow to
 snakemake -j 1 --snakefile 04_Workflow/01_snakemake/snakefile.yaml --use-singularity --singularity-args "-B <ROOT_PATH>:<ROOT_PATH> -B /tmp:/tmp" --dryrun
 ```
 
-You should see the jobs stats to execute. The number of jobs depends on the number of plate libraries.
+You should see the jobs stats to execute. The number of jobs depends on the number of plate libraries. You should see one `zUMIs` job per plate and if required, one `trust4` of `airrflow` job per plate.
+
+```
+Job stats:
+job           count
+----------  -------
+QC                1
+all               1
+copy_zUMIS        1
+trust4            5
+zUMIs             5
+total            13
+```
 
 3. Run the same command without the `--dryrun` option, if no error is raised:
 

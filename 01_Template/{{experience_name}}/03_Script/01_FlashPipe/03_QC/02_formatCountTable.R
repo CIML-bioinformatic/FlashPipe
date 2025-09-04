@@ -27,8 +27,17 @@ if (PARAMS_BCR | PARAMS_TCR){
   BCR_df_list = list()
   TCR_df_list = list()
   for (plate_name in PLATES_LIST) {
+    # Reading output tsv files from Airrflow (if params selected)
+    if (PARAMS_TOOLS_BCR_TCR_ANALYSIS == "airrflow"){
+      PATH_AIRRFLOW_OUTPUT_TEMP <- sub("/+$", "", PATH_AIRRFLOW_OUTPUT)
+      plate_directory <- file.path(PATH_AIRRFLOW_OUTPUT_TEMP, "trust4")
+    }
     # Reading output tsv files from trust4
-    plate_directory <- file.path(PATH_TRUST4_OUTPUT, plate_name)
+    if (PARAMS_TOOLS_BCR_TCR_ANALYSIS == "trust4"){
+      plate_directory <- file.path(PATH_TRUST4_OUTPUT, plate_name)
+    }else{
+      plate_directory <- PATH_TRUST4_OUTPUT
+    }
     tsv_air_file <- list.files(plate_directory, pattern = paste0("^", plate_name, "_barcode_airr.tsv$"), full.names = TRUE)
     file_air_tsv <- read.csv(tsv_air_file, sep = '\t')
     
@@ -294,11 +303,11 @@ if (PARAMS_INDEXSORT &! PARAMS_METADATA){
   DATAFRAME_FOR_METADATA_SEURAT = df_indexsort_object_seurat
   
   # Environment cleanup: removes temporary objects
-  rm(path_index_sort_file)
-  rm(separator)
-  rm(index_sort_df)
-  rm(df_indexsort_object_seurat_transform)
-  rm(df_indexsort_object_seurat)
+  if( exists( "path_index_sort_file")) rm("path_index_sort_file")
+  if( exists( "separator")) rm("separator")
+  if( exists( "index_sort_df")) rm("index_sort_df")
+  if( exists( "df_indexsort_object_seurat_transform")) rm("df_indexsort_object_seurat_transform")
+  if( exists( "df_indexsort_object_seurat")) rm("df_indexsort_object_seurat")
 }
 
 # Seurat object create with no normalized or scaled data, and the cell and feature minimums are set to 0, to leave the choice open afterwards.
@@ -311,6 +320,10 @@ PATH_DIRECTORY_ANALYSIS <- file.path(PATH_FLASHPIPE_OUTPUT, '04_Analysis')
 saveRDS( FINAL_SEURAT_OBJECT, file = file.path( PATH_DIRECTORY_ANALYSIS, "complete_seurat_object.RDS"))
 
 # Environment cleanup: removes temporary objects
-rm(FINAL_SEURAT_OBJECT)
-rm(df_ARN_object_seurat)
-rm(gene_name_data_object_seurat)
+if( exists( "FINAL_SEURAT_OBJECT")) rm("FINAL_SEURAT_OBJECT")
+if( exists( "plate_sheet")) rm("plate_sheet")
+if( exists( "df_ARN_object_seurat")) rm("df_ARN_object_seurat")
+if( exists( "gene_name_data_object_seurat")) rm("gene_name_data_object_seurat")
+if( exists( "well_col_index")) rm("well_col_index")
+if( exists( "other_cols")) rm("other_cols")
+if( exists( "keep_rows")) rm("keep_rows")

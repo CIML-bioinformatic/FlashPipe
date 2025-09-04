@@ -72,16 +72,6 @@ print(dotplot_all_RNA_umi_count_log)
 rna_umi_min = min( all_summary_RNA_df_all_plate$RNA.UMI_count_log)
 rna_umi_max = max( all_summary_RNA_df_all_plate$RNA.UMI_count_log)
 
-# With the log, certain values can be -Inf or +Inf. Numerically this makes sense, but biologically it doesn't.
-# Therefore, for the limit, if these values are present, they will be set directly to 0 or 1 to avoid errors.
-if (rna_umi_min == -Inf) {
-  rna_umi_min = 0
-}
-if (rna_umi_max == Inf) {
-  rna_umi_max = 1
-}
-
-
 # Print the RNA UMI per plate in plate plots
 for (plate_name in levels(PLATES_LIST)) {
   

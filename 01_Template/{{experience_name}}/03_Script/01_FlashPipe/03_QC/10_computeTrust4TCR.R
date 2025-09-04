@@ -60,22 +60,36 @@ if (PARAMS_TCR){
     result_df <- data.frame(cell_id = cell_id_vect,
                             c_call_class = result_vect)
     
-    if (length(result_df != 0)){
-      # Add the plate to the dataframe, to add it to the main dataframe (all_isotype_class)
-      result_df[ , COLUMN_HEADER_PLATE_NAME] = plate_name
+    # Add the plate to the dataframe, to add it to the main dataframe (all_isotype_class)
+    result_df[ , COLUMN_HEADER_PLATE_NAME] = plate_name
+    
+    # If there is a difference between the barcodes in TRUST4 and the barcode file supplied, they are accumulated.
+    erroneous_barcodes = setdiff( result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)
+    
+    # If erroneous_barcodes is greater than 0, then warning (because there are barcodes in trust4 not found in the supplied bacrode file).
+    if (length(erroneous_barcodes) > 0){
       
-      # If there is a difference between the barcodes in TRUST4 and the barcode file supplied, they are accumulated.
-      erroneous_barcodes = setdiff( result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)
+      # Print the warning on the discripency between the lists of barcodes
+      warning(paste("For plate", plate_name, ", there is a discripency between the list of Well Barcode in the TRUST4 results and the list of Well Barcode from the provider. Some barcodes present in the TRUST4 results are not found in the provided cell barcode file.\n Successive analysis will ignore barcodes outside the original list of well barcodes. \n ", length( erroneous_barcodes), " barcodes not found"))
       
-      # If erroneous_barcodes is greater than 0, then warning (because there are barcodes in trust4 not found in the supplied bacrode file).
-      if (length(erroneous_barcodes) > 0){
-        warning(paste("ERROR : There is a discripency between the list of Well Barcode in the TRUST4 results and the list of Well Barcode from the provider.\nSome barcodes present in the TRUST4 results are not found in the provided cell barcode file in Plate :", plate_name, "\n Barcodes not found:", paste( erroneous_barcodes, collapse=";")))
-      }
+      # Extract the erroneous wells to export them to file for analysis
+      erroneoous_df = result_df[ which( result_df[ , COLUMN_HEADER_CELL_ID] %in% erroneous_barcodes), ]
+      plate_output_directory <- file.path(PATH_ANALYSIS_OUTPUT, plate_name, '10_computeTrust4TCRr')
+      dir.create(plate_output_directory, recursive = TRUE, showWarnings = FALSE)
+      write.csv( erroneoous_df, 
+                 file = file.path( plate_output_directory, "Erroneous_Barcode_Trust4_Isotype.csv"),
+                 row.names= FALSE,
+                 quote = FALSE)
       
-      # Creation of a WellID column containing the well id assigned to the barcode (for plate plots)
-      result_df[COLUMN_HEADER_WELL_ID] = CELL_BARCODE_WELL_DF$WellID[match(result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)]
-      all_isotype_class_tcr = rbind(all_isotype_class_tcr, result_df)
+      # Extract only the wells from the originel well ID
+      result_df = result_df[ which( result_df[ , COLUMN_HEADER_CELL_ID] %in% intersect( result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)), ]
     }
+    
+    # Creation of a WellID column containing the well id assigned to the barcode (for plate plots)
+    result_df[COLUMN_HEADER_WELL_ID] = CELL_BARCODE_WELL_DF$WellID[match(result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)]
+    # Creation of a dataframe containing all results for each plate
+    all_isotype_class_tcr = rbind(all_isotype_class_tcr, result_df)
+    
   }
   
   # ##################################################
@@ -95,8 +109,10 @@ if (PARAMS_TCR){
   # Display stacked barchat for all classes across all plates
   cat("### Isotype class {.tabset .tab-fade} \n\n")
   plot_stacked_barchat <- ggplot(all_isotype_class_tcr,  aes( x = .data[[COLUMN_HEADER_PLATE_NAME]])) + 
-    geom_bar(aes(fill=.data[[COLUMN_HEADER_CLASS_CALL]])) + theme_light() +
-    scale_fill_manual(values = color_categorical)
+    geom_bar(aes(fill=.data[[COLUMN_HEADER_CLASS_CALL]])) +
+    theme_light() +
+    scale_fill_manual(values = color_categorical) +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
   print(plot_stacked_barchat)
   
   # ##############################################
@@ -128,8 +144,32 @@ if (PARAMS_TCR){
   for (plate_name in levels(PLATES_LIST)) {
     TCR_df = TCR_df_list[[ plate_name]]
     
+    # If there is a difference between the barcodes in TRUST4 and the barcode file supplied, they are accumulated.
+    erroneous_barcodes = setdiff( TCR_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)
+    
+    # If erroneous_barcodes is greater than 0, then warning (because there are barcodes in trust4 not found in the supplied bacrode file).
+    if (length(erroneous_barcodes) > 0){
+      
+      # Print the warning on the discripency between the lists of barcodes
+      warning(paste("For plate", plate_name, ", there is a discripency between the list of Well Barcode in the TRUST4 results and the list of Well Barcode from the provider. Some barcodes present in the TRUST4 results are not found in the provided cell barcode file.\n Successive analysis will ignore barcodes outside the original list of well barcodes. \n ", length( erroneous_barcodes), " barcodes not found"))
+      
+      # Extract the erroneous wells to export them to file for analysis
+      erroneoous_df = TCR_df[ which( BCR_df[ , COLUMN_HEADER_CELL_ID] %in% erroneous_barcodes), ]
+      plate_output_directory <- file.path(PATH_ANALYSIS_OUTPUT, plate_name, '10_computeTrust4TCRr')
+      dir.create(plate_output_directory, recursive = TRUE, showWarnings = FALSE)
+      write.csv( erroneoous_df, 
+                 file = file.path( plate_output_directory, "Erroneous_Barcode_Trust4_ChainComposition.csv"),
+                 row.names= FALSE,
+                 quote = FALSE)
+      
+      # Extract only the wells from the originel well ID
+      result_df = TCR_df[ which( TCR_df[ , COLUMN_HEADER_CELL_ID] %in% intersect( TCR_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)), ]
+    }else{
+      result_df = TCR_df
+    }
+    
     # Only keeps COLUMN_HEADER_V_CALL, COLUMN_HEADER_J_CALL, COLUMN_HEADER_PRODUCTIVE and COLUMN_HEADER_CELL_ID in the dataset.
-    df_productivity_by_cell_id <- TCR_df[, c(COLUMN_HEADER_V_CALL, COLUMN_HEADER_J_CALL, COLUMN_HEADER_PRODUCTIVE, COLUMN_HEADER_CELL_ID)]
+    df_productivity_by_cell_id <- result_df[, c(COLUMN_HEADER_V_CALL, COLUMN_HEADER_J_CALL, COLUMN_HEADER_PRODUCTIVE, COLUMN_HEADER_CELL_ID)]
     unique_cell_ids <- unique(df_productivity_by_cell_id$cell_id)
     
     # List to store values
@@ -217,7 +257,8 @@ if (PARAMS_TCR){
   plot_stacked_barchat <- ggplot(all_productivity_by_cell_id_tcr, aes(x = .data[[COLUMN_HEADER_PLATE_NAME]])) +
     geom_bar(aes(fill = .data[[COLUMN_HEADER_CHAIN_COMPOSITION]])) +
     theme_light() +
-    scale_fill_manual(values = color_categorical)
+    scale_fill_manual(values = color_categorical)  +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
   print(plot_stacked_barchat)
   cat("\n  \n")
   

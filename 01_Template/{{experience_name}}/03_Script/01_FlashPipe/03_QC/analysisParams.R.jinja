@@ -25,11 +25,12 @@ PARAMS_INDEXSORT = {{index_sort_analysis}}
 PARAMS_BCR = {{bcr_repertoire_analysis}}
 PARAMS_TCR = {{tcr_repertoire_analysis}}
 PARAMS_METADATA = {{metadata_analysis}}
+PARAMS_TOOLS_BCR_TCR_ANALYSIS = "{{airrflow_or_trust4}}"
 
 # Load FlashPipe configuration file filled in for user, plus check that it exists.
-PATH_CONFIG_FILE = file.path( PATH_EXPERIMENT_REFERENCE, "Config_FlashPipe.yml")
+PATH_CONFIG_FILE = file.path( PATH_EXPERIMENT_REFERENCE, "config_FlashPipe.yml")
 if (PATH_CONFIG_FILE == ""){
-  error_intialisation <- c(error_intialisation, "ERROR : Path to user config file (Config_FlashPipe.yml) in R is empty (PATH_CONFIG_FILE)")
+  error_intialisation <- c(error_intialisation, "ERROR : Path to user config file (config_FlashPipe.yml) in R is empty (PATH_CONFIG_FILE)")
 }
 CONFIG_FILE_YAML = yaml::yaml.load_file(PATH_CONFIG_FILE)
 
@@ -116,9 +117,11 @@ if(PARAMS_METADATA){
 }
 
 if (PARAMS_BCR | PARAMS_TCR){
-  PATH_TRUST4_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, "02_trust4")
-  if (PATH_TRUST4_OUTPUT == ""){
-    error_intialisation <- c(error_intialisation, "ERROR : Path to Trust4 output directory (02_trust4) in R is empty (PATH_TRUST4_OUTPUT)")
+  if (PARAMS_TOOLS_BCR_TCR_ANALYSIS == "airrflow"){
+    PATH_TRUST4_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, "02_airrflow/trust4")
+  }
+  else{
+    PATH_TRUST4_OUTPUT = file.path( PATH_FLASHPIPE_OUTPUT, "02_trust4")
   }
 }
 

@@ -1,6 +1,15 @@
 barcode_file:
   default: 
   type: str
+airrflow_or_trust4:
+  default: 
+  type: str
+path_output_airrflow:
+  default: 
+  type: str
+clonal_parameter_airrflow:
+  default: 
+  type: str
 bcr_repertoire_analysis:
   default: 
   type: str
@@ -47,6 +56,9 @@ plate_names:
   default: 
   type: str
 project_name:
+  default: 
+  type: str
+species:
   default: 
   type: str
 star_index:

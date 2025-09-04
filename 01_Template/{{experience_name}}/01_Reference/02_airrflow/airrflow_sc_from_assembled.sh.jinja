@@ -1,0 +1,14 @@
+#! /usr/bin/bash
+
+nextflow run nf-core/airrflow -r 4.3.0 \
+-profile singularity \
+--mode fastq \
+--input 01_Reference/02_airrflow/assembled_samplesheet.tsv \
+--library_generation_method trust4 \
+--umi_read R2 \
+--cell_barcode_read R2 \
+--read_format bc:0:7,um:8:15 \
+-c 01_Reference/02_airrflow/resource.config \
+--clonal_threshold {{clonal_parameter_airrflow}} \
+--outdir {{path_output_airrflow}} \
+-resume

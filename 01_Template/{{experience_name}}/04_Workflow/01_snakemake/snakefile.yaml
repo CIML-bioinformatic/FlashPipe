@@ -12,6 +12,8 @@ PLATE_NAME_LIST = config[ "plate_names"].split(",")
 
 METHOD = config[ "method"]
 INDEX_SORT_ANALYSIS = config[ "index_sort_analysis"]
+
+TOOLS_BCR_TCR_ANALYSIS = config[ "tools_bcr_tcr_analysis"]
 BCR_ANALYSIS = config[ "bcr_repertoire_analysis"]
 TCR_ANALYSIS = config[ "tcr_repertoire_analysis"]
 
@@ -35,8 +37,11 @@ def get_qc_input_files( wildcards):
   input_files = input_files + gene_mapping
     
   # Add the files from TRUST4 output if required
-  if BCR_ANALYSIS or TCR_ANALYSIS:
+  if (BCR_ANALYSIS or TCR_ANALYSIS) and TOOLS_BCR_TCR_ANALYSIS == "trust4":
     trust4_airr_files = expand( "05_Output/01_FlashPipe/02_trust4/{plate_name}/{plate_name}_barcode_airr.tsv", plate_name = PLATE_NAME_LIST)
+    input_files = input_files + trust4_airr_files
+  if (BCR_ANALYSIS or TCR_ANALYSIS) and TOOLS_BCR_TCR_ANALYSIS == "airrflow":
+    trust4_airr_files = expand( "05_Output/01_FlashPipe/02_airrflow/trust4/{plate_name}_barcode_airr.tsv", plate_name = PLATE_NAME_LIST)
     input_files = input_files + trust4_airr_files
       
     # Add the files of indexsort data if required
@@ -56,6 +61,7 @@ def getFastq1(wildcards):
 # Provide the Fastq Read 2 file according to the plate name
 def getFastq2(wildcards):
   return config["fastq_read2"][wildcards.plate_name]
+
 
 ############################################
 # Rule all
@@ -102,17 +108,25 @@ rule copy_zUMIS:
     zUMIs_tool_zip = "02_Container/zUMIs/zUMIs-2.9.7.zip"
   output:
     zUMIs_tool = "/tmp/zUMIs/zUMIs-2.9.7/zUMIs.sh"
+  params:
+    zUMIS_tmpdir=config["zUMIS_outdir"],
+    zumis_dir=config["zUMIS_outdir"] + "/zUMIs-2.9.7"
   shell:
     '''
-    if ! test -f /tmp/zUMIs/zUMIs-2.9.7/zUMIs.sh; then
-      rm -rf /tmp/zUMIs/zUMIs-main
-      rm -rf /tmp/zUMIs/zUMIs-2.9.7
-      mkdir -p /tmp/zUMIs
-      unzip {input.zUMIs_tool_zip} -d /tmp/zUMIs
-      mv -T /tmp/zUMIs/zUMIs-main /tmp/zUMIs/zUMIs-2.9.7
-      chmod -R 777 /tmp/zUMIs/zUMIs-2.9.7
+    if ! test -f {params.zumis_dir}/zUMIs.sh; then
+      rm -rf {params.zUMIS_tmpdir}/zUMIs-main
+      rm -rf {params.zumis_dir}
+      mkdir -p {params.zUMIS_tmpdir}
+      unzip {input.zUMIs_tool_zip} -d {params.zUMIS_tmpdir}
+      mv -T {params.zUMIS_tmpdir}/zUMIs-main {params.zumis_dir}
+      chmod -R 777 {params.zumis_dir}
+      echo "Inflating miniconda environment"
+      mkdir -p {params.zumis_dir}/zUMIs-env
+      echo "|-- Compressing tar"
+      cat {params.zumis_dir}/zUMIs-miniconda.parta* > {params.zumis_dir}/zUMIs-miniconda.tar.bz2
+      echo "|-- Inflating tar"
+      tar -xj --overwrite -f {params.zumis_dir}/zUMIs-miniconda.tar.bz2 -C {params.zumis_dir}/zUMIs-env
     fi
-
     '''
 
 ############################################
@@ -139,5 +153,19 @@ rule trust4:
     --barcodeWhitelist {params.BARCODE} \
     --UMI {input.fastq2} --umiRange 8 15 + \
     -o {wildcards.plate_name} --od `dirname {output}` --repseq
+    '''
+
+############################################
+# Rule airrflow
+############################################ 
+rule airrflow:
+  input:
+    assembled_samplesheet = "01_Reference/02_airrflow/assembled_samplesheet.tsv",
+    resource_config = "01_Reference/02_airrflow/resource.config"
+  output:
+    expand( "05_Output/01_FlashPipe/02_airrflow/trust4/{plate_name}_barcode_airr.tsv", plate_name = PLATE_NAME_LIST)
+  shell:
+    '''
+    ./01_Reference/02_airrflow/airrflow_sc_from_assembled.sh
     '''
 

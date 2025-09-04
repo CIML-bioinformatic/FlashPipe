@@ -3,6 +3,7 @@ import os
 import re
 import shutil
 import sys
+import pandas as pd
 
 # ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 # General code description :
@@ -16,7 +17,9 @@ import sys
 # 8. Function verify_name_experience_path_and_config_file : Checks if the experiment name given in the config file matches the one retrieved by the directory path
 # 9. Function verify_file_exist : Checks if the provided file exists.
 # 10. Function verify_separator_in_config_file : Check that the separators in the file are "," and not something else.
-# 11. Function verify_empty_values_config_file : Checks that all mandarity sections in the user config file (yaml) are not empty.
+# 11. Function verify_empty_values_config_file : Checks that all mandarity sections in the user config file (yaml) are not empty.*
+# 12. Checks the parameter airrflow, to adapt the option for the launch
+# 13. Function to generate the tsv file containing the information required by Airrflow
 # ••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 
 # •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
@@ -242,25 +245,30 @@ def verify_method(parameter, indexsort):
 def verify_parameters(parameter, name_params):
     '''
     Checks whether the type of parameter entered is correct (yes or no).
-
-    parameter: The value contained in the config file (in this case it will be either yes or no).
-    name_params: Name of the variable to be checked, to be used for output (print). 
     '''
-    # Checks whether True or False (in config file 'yes' or 'no')
-    if parameter != True and parameter != False :
-        print("ERROR : The parameter", name_params, "is erroneous. It should be 'yes' or 'no' (check the config file to fix the term).")
+    # Normalize string inputs to booleans
+    if isinstance(parameter, str):
+        parameter_lower = parameter.strip().lower()
+        if parameter_lower in ['yes', 'true']:
+            parameter = True
+        elif parameter_lower in ['no', 'false']:
+            parameter = False
+        else:
+            print(f"ERROR: Invalid string value '{parameter}' for {name_params}. Should be 'yes' or 'no'.")
+            sys.exit()
+
+    elif not isinstance(parameter, bool):
+        print(f"ERROR: Unexpected type for {name_params}: {type(parameter)}. Expected bool or 'yes'/'no' as string.")
         sys.exit()
-    else :
-        # If the value is True, then this means it's selected
-        if parameter :
-            print("You selected ", name_params, " (Set to ", parameter, ")", sep = '')
-            # We return it with 'TRUE' and not 'True' because in R, TRUE is recognized, which facilitates analysis afterwards.
-            return "TRUE"
-        # Value set to false, then this means it's not selected
-        else : 
-            print("You do not select ", name_params, " (Set to ", parameter, ")", sep = '')
-            # We return it with 'FALSE' and not 'False', because in R it's TRUE that's recognized, which makes it easier to analyze afterwards.
-            return "FALSE"
+
+    # Now handle as boolean
+    if parameter:
+        print("You selected ", name_params, " (Set to ", parameter, ")", sep = '')
+        return "TRUE"
+    else:
+        print("You do not select ", name_params, " (Set to ", parameter, ")", sep = '')
+        return "FALSE"
+
 
 # •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
 # ## 8. Checks if the experiment name given in the config file matches the one retrieved by the directory path
@@ -322,7 +330,16 @@ def verify_empty_values_config_file(file_config_flashpipe):
         # Force value to False (just to have a string, because if you don't specify copy doesn't work)
         file_config_flashpipe["index_sort"] = "FALSE"
         file_config_flashpipe["not_fluorescent"] = "FALSE"
-
+    
+    if file_config_flashpipe.get("tools_bcr_tcr_analysis") is False or None :
+        skip_keys.update(["bcr_repertoire_analysis", "tcr_repertoire_analysis"])
+        print("You have not selected a tool for BCR/TCR analysis. This step will not be performed.")
+        
+        # Force value to False (just to have a string, because if you don't specify copy doesn't work)
+        file_config_flashpipe["tools_bcr_tcr_analysis"] = "FALSE"
+        file_config_flashpipe["bcr_repertoire_analysis"] = "FALSE"
+        file_config_flashpipe["tcr_repertoire_analysis"] = "FALSE"
+    
     for key in file_config_flashpipe:
         if key in skip_keys:
             continue
@@ -332,4 +349,82 @@ def verify_empty_values_config_file(file_config_flashpipe):
 
     if acc > 0:
         sys.exit()
+
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# ## 12. Checks the parameter airrflow, to adapt the option for the launch
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+def airrflow_parameter(file_config_flashpipe):
+    '''
+    Select the good option for the Airrflow analysis.
+    
+    file_config_flashpipe: The yaml file to be checked
+    '''
+    if file_config_flashpipe.get("tools_bcr_tcr_analysis") == "airrflow" :
+        if file_config_flashpipe.get("bcr_repertoire_analysis") is True :
+            return "auto"
+        elif file_config_flashpipe.get("tcr_repertoire_analysis") is True :
+            return '0'
+    else : 
+        return "FALSE"
+
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+# ## 13. Function to generate the tsv file containing the information required by Airrflow
+# •••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••••
+
+def generate_airrflow_samplesheet(path_airrflow_reference, plates_list, fastq_files_read1,
+                                  fastq_files_read2, species, file_config_flashpipe,
+                                  method_key="method_analysis", bcr_key="bcr_repertoire_analysis", 
+                                  tcr_key="tcr_repertoire_analysis"):
+    '''
+    Generates a .tsv file filled with information for launching airrflow with Trust4.
+
+    Args:
+        path_airrflow_reference: Path to tsv file containing column names already set up.
+        plates_list: List of plate names.
+        fastq_files_read1: Paths to R1 files.
+        fastq_files_read2: Paths to R2 files.
+        species: Species (obtained in config file).
+        file_config_flashpipe: FlashPipe configuration file dictionary.
+        method_key: Variable for detecting the value contained in the analysis mode ("single-cell" or "mini-bulk").
+        bcr_key: Variable for detecting the value contained in BCR.
+        tcr_key: Variable for detecting the value contained in TCR.
+    '''
+    df_template = pd.read_csv(path_airrflow_reference, sep="\t")
+    
+    # Determine value for method (single-cell or minibulk)
+    method_analysis = file_config_flashpipe.get(method_key)
+    single_cell_flag = "TRUE" if method_analysis.lower() == "single-cell" else "FALSE"
+    
+    # Retrieves the value for BCR and TCR and adapts it in the .tsv file
+    bcr = file_config_flashpipe.get(bcr_key)
+    tcr = file_config_flashpipe.get(tcr_key)
+    # Adapts the value found in the config file to the .tsv file
+    if bcr is True:
+        pcr_target_locus = "IG"
+    elif tcr is True:
+        pcr_target_locus = "TR"
+    else:
+        pcr_target_locus = "NA"
+
+    rows = []
+    for i, (sample_id, r1, r2) in enumerate(zip(plates_list, fastq_files_read1, fastq_files_read2), start=1):
+        row = {
+            "sample_id": sample_id,
+            "filename_R1": r1,
+            "filename_R2": r2,
+            "subject_id": f"S{i}",
+            "species": species,
+            "pcr_target_locus": pcr_target_locus,
+            "single_cell": single_cell_flag,
+            "tissue": "NA",
+            "sex": "NA",
+            "age": "NA",
+            "biomaterial_provider": "FlashFB5p-seq"
+        }
+        rows.append(row)
+
+    # Create the DataFrame and save
+    df_output = pd.DataFrame(rows, columns=df_template.columns)
+    df_output.to_csv(path_airrflow_reference, sep="\t", index=False)
 

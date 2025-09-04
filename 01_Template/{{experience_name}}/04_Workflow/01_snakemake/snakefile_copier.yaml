@@ -19,7 +19,7 @@ print( "EXPERIENCE_NAME=" + EXPERIENCE_NAME)
 
 rule all:
   input:
-  	zUMIs_tool_zip = "02_Container/zUMIs/zUMIS-2.9.7.zip"
+  	zUMIs_tool_zip = "02_Container/zUMIs/zUMIs-2.9.7.zip"
 	
 ############################################
 # Rule organize_structure
