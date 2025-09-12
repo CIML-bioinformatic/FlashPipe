@@ -77,7 +77,7 @@ for (plate_name in PLATES_LIST) {
   rds_file <- file.path(plate_directory, "zUMIs_output", "expression", paste0(plate_name, ".dgecounts.rds"))
   # Load the RDS file
   file_rds <- readRDS(rds_file)
-  
+
   # Check if the gene_names.txt file for the current plate exists
   gene_names_file <- file.path(plate_directory, "zUMIs_output", "expression", paste0(plate_name, ".gene_names.txt"))
   # Load the gene names file (tab-delimited)
@@ -109,8 +109,9 @@ for (plate_name in PLATES_LIST) {
   gene_id_to_name <- setNames(gene_names_df$gene_name, gene_names_df$gene_id)
   
   # Store and replace Ensembl names with gene names.
-  new_row_names = gene_id_to_name[rownames(gene_id_data)]
+  new_row_names = gene_id_to_name[ rownames(gene_id_data)]
   names( new_row_names) = rownames(gene_id_data)
+
   # Check data and presence of NA. If present, we keep the original name.
   if (any( is.na( new_row_names))){
     na_index_set = which( is.na( new_row_names))
@@ -120,10 +121,26 @@ for (plate_name in PLATES_LIST) {
   # Replace the gene_ids in the rownames with the corresponding gene_names
   rownames(gene_id_data) <- new_row_names
   
+  # Check for duplicated gene names and keep only the line with highest sum of count when duplicates exists
+  duplicated_index_set = which( duplicated( rownames( gene_id_data)))
+  if( length( duplicated_index_set) > 0){
+    warning( paste( "<BR>Duplicated rows for some genes found :", paste( rownames( gene_id_data)[duplicated_index_set], collapse = "; ")))
+    # Compute the sum of count for each row (gene name)
+    row_sum <- rowSums( gene_id_data)
+    
+    # For each row name, find the index of the row with the max sum
+    keep_idx <- tapply(seq_len(nrow( gene_id_data)), rownames( gene_id_data),
+                       function(idx) idx[which.max(row_sum[idx])])
+    
+    # Subset matrix
+    gene_id_data <- gene_id_data[keep_idx, , drop = FALSE]
+  }
+  
   # Create a dataframe with the new gene names as rownames
   gene_name_data <- data.frame(gene_id_data)
   # Copy gene_id_data values and modify them to suit Seurat object
   gene_name_data_object_seurat <- as.data.frame(gene_id_data)
+  
   
   # Replace column names with WellID using the barcode-to-well mapping from the cell_barcode_well_df
   # Create a mapping from BarcodeSequence to WellID
