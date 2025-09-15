@@ -74,39 +74,41 @@ plot_all_RNA_feature_count <- ggplot(all_RNA_feature_count, aes(x = .data[[COLUM
 print(plot_all_RNA_feature_count)
 
 # #######################################################
-# ## 3. Creation of Upset Plot of ERCC UMI RNA data #####
+# ## 3. Creation of Upset Plot of UMI RNA data ##########
 # #######################################################
 
-cat("\n \n")
-cat("<b>Number total of gene through all the plates : ", length( all_features_set), "</b>.\n \n", sep = '')
-
-# Get a list of all the gene names across all my plates.
-all_genes <- unique(unlist(lapply(levels(PLATES_LIST), function(plate) {
-  rownames(RNA_count_df_list[[plate]])
-})))
-
-# Create a dataframe containing the names of all genes with the names of all plates in columns.
-df_Up_SetPlot <- data.frame(matrix(0, nrow = length(all_genes), ncol = length(PLATES_LIST)))
-rownames(df_Up_SetPlot) <- all_genes
-colnames(df_Up_SetPlot) <- levels(PLATES_LIST)
-
-# We replace the 0's in the dataframe with a “1” if the genes are present in the plate.
-for (plate in levels(PLATES_LIST)) {
-  RNA_Feature_Count <- RNA_count_df_list[[plate]]
-  gene_names <- rownames(RNA_Feature_Count)
-  df_Up_SetPlot[gene_names, plate] <- 1
+if( length( PLATES_LIST) > 1){
+  cat("\n \n")
+  cat("<b>Number total of gene through all the plates : ", length( all_features_set), "</b>.\n \n", sep = '')
+  
+  # Get a list of all the gene names across all my plates.
+  all_genes <- unique(unlist(lapply(levels(PLATES_LIST), function(plate) {
+    rownames(RNA_count_df_list[[plate]])
+  })))
+  
+  # Create a dataframe containing the names of all genes with the names of all plates in columns.
+  df_Up_SetPlot <- data.frame(matrix(0, nrow = length(all_genes), ncol = length(PLATES_LIST)))
+  rownames(df_Up_SetPlot) <- all_genes
+  colnames(df_Up_SetPlot) <- levels(PLATES_LIST)
+  
+  # We replace the 0's in the dataframe with a “1” if the genes are present in the plate.
+  for (plate in levels(PLATES_LIST)) {
+    RNA_Feature_Count <- RNA_count_df_list[[plate]]
+    gene_names <- rownames(RNA_Feature_Count)
+    df_Up_SetPlot[gene_names, plate] <- 1
+  }
+  
+  upset_plot <- upset(df_Up_SetPlot, 
+                      sets = colnames(df_Up_SetPlot),  # Plates as sets
+                      sets.bar.color = "#56B4E9", 
+                      order.by = "freq", 
+                      main.bar.color = "#009E73", 
+                      matrix.color = "#D55E00", 
+                      keep.order = TRUE) # Keep the order of the plates
+  print(upset_plot)
+  
+  cat("\n \n")
 }
-
-upset_plot <- upset(df_Up_SetPlot, 
-                    sets = colnames(df_Up_SetPlot),  # Plates as sets
-                    sets.bar.color = "#56B4E9", 
-                    order.by = "freq", 
-                    main.bar.color = "#009E73", 
-                    matrix.color = "#D55E00", 
-                    keep.order = TRUE) # Keep the order of the plates
-print(upset_plot)
-
-cat("\n \n")
 
 # ######################################################################
 # ## 4. Creation of plate-by-plate graph of ERCC RNA data for UMIs #####
