@@ -33,7 +33,12 @@ for (plate in levels(PLATES_LIST)) {
                                WellID = names(RNA_Count))
   summary_RNA_df[ , COLUMN_HEADER_PLATE_NAME] = plate
   
-  
+  # Replace Infinity value by NA
+  infinite_indexes = which( is.infinite( summary_RNA_df$RNA.UMI_count_log))
+  if( length( infinite_indexes)  > 0 ){
+    summary_RNA_df$RNA.UMI_count_log[ infinite_indexes] = NA
+  }
+    
   # Add the UMI data to the global dataframe all_summary_RNA_df_all_plate
   all_summary_RNA_df_all_plate <- rbind(all_summary_RNA_df_all_plate, summary_RNA_df)
   
