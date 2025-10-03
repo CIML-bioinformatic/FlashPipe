@@ -29,68 +29,71 @@ if (PARAMS_TCR){
     # Selection and conservation of Istoypes in the C_Call column.
     TCR_df = TCR_df_list[[ plate_name]]
     df_class_by_cell_id_tcr <- TCR_df[, c(COLUMN_HEADER_C_CALL, COLUMN_HEADER_CELL_ID)]
-    df_class_by_cell_id_tcr <- df_class_by_cell_id_tcr[!grepl("TRBC|TRDC", df_class_by_cell_id_tcr[,COLUMN_HEADER_C_CALL]), ]
+    df_class_by_cell_id_tcr <- df_class_by_cell_id_tcr[!grepl("TRBC|TRDC", df_class_by_cell_id_tcr[,COLUMN_HEADER_C_CALL]) & df_class_by_cell_id_tcr[,COLUMN_HEADER_C_CALL]!="", ]
     unique_cell_ids <- unique(df_class_by_cell_id_tcr[[COLUMN_HEADER_CELL_ID]])
     
-    # List to store results for each plate
-    result_vect <- c()
-    cell_id_vect <- c()
-    for (cell_id in unique_cell_ids) {
-      # Extract rows matching cell_id
-      subset_df <- df_class_by_cell_id_tcr[df_class_by_cell_id_tcr[[COLUMN_HEADER_CELL_ID]] == cell_id, ]
-      # Filter empty c_call values (if c_call is an empty string, we don't add it)
-      non_empty_calls <- subset_df[[COLUMN_HEADER_C_CALL]][subset_df[[COLUMN_HEADER_C_CALL]] != ""]
-      # Extract the part before the star (*)
-      non_empty_calls <- sub("\\*.*", "", non_empty_calls)
-      
-      # If several non-empty values, we add them
-      if (length(non_empty_calls) > 0) {
-        # If only one non-empty value, we add it directly
-        if (length(non_empty_calls) == 1) {
-          result_vect <- c(result_vect, non_empty_calls)
-          cell_id_vect <- c(cell_id_vect, rep(cell_id, length(non_empty_calls)))
-        } else {
-          # If several non-empty values, paste them (with underscore)
-          result_vect <- c(result_vect, paste(unique(non_empty_calls), collapse = "_"))
-          cell_id_vect <- c(cell_id_vect, rep(cell_id, length(non_empty_calls)))
-        }
-      }
+    if( length( unique_cell_ids) > 0){
+    
+	    # List to store results for each plate
+	    result_vect <- c()
+	    cell_id_vect <- c()
+	    for (cell_id in unique_cell_ids) {
+	      # Extract rows matching cell_id
+	      subset_df <- df_class_by_cell_id_tcr[df_class_by_cell_id_tcr[[COLUMN_HEADER_CELL_ID]] == cell_id, ]
+	      # Filter empty c_call values (if c_call is an empty string, we don't add it)
+	      non_empty_calls <- subset_df[[COLUMN_HEADER_C_CALL]][subset_df[[COLUMN_HEADER_C_CALL]] != ""]
+	      # Extract the part before the star (*)
+	      non_empty_calls <- sub("\\*.*", "", non_empty_calls)
+	      
+	      # If several non-empty values, we add them
+	      if (length(non_empty_calls) > 0) {
+		# If only one non-empty value, we add it directly
+		if (length(non_empty_calls) == 1) {
+		  result_vect <- c(result_vect, non_empty_calls)
+		  cell_id_vect <- c(cell_id_vect, rep(cell_id, length(non_empty_calls)))
+		} else {
+		  # If several non-empty values, paste them (with underscore)
+		  result_vect <- c(result_vect, paste(unique(non_empty_calls), collapse = "_"))
+		  cell_id_vect <- c(cell_id_vect, rep(cell_id, length(non_empty_calls)))
+		}
+	      }
+	    }
+	    # Create a dataframe to associate each class with its cell_id
+	    result_df <- data.frame(cell_id = cell_id_vect,
+		                    c_call_class = result_vect)
+	    
+	    # Add the plate to the dataframe, to add it to the main dataframe (all_isotype_class)
+	    result_df[ , COLUMN_HEADER_PLATE_NAME] = plate_name
+	    
+	    # If there is a difference between the barcodes in TRUST4 and the barcode file supplied, they are accumulated.
+	    erroneous_barcodes = setdiff( result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)
+	    
+	    # If erroneous_barcodes is greater than 0, then warning (because there are barcodes in trust4 not found in the supplied bacrode file).
+	    if (length(erroneous_barcodes) > 0){
+	      
+	      # Print the warning on the discripency between the lists of barcodes
+	      warning(paste("For plate", plate_name, ", there is a discripency between the list of Well Barcode in the TRUST4 results and the list of Well Barcode from the provider. Some barcodes present in the TRUST4 results are not found in the provided cell barcode file.\n Successive analysis will ignore barcodes outside the original list of well barcodes. \n ", length( erroneous_barcodes), " barcodes not found"))
+	      
+	      # Extract the erroneous wells to export them to file for analysis
+	      erroneoous_df = result_df[ which( result_df[ , COLUMN_HEADER_CELL_ID] %in% erroneous_barcodes), ]
+	      plate_output_directory <- file.path(PATH_ANALYSIS_OUTPUT, plate_name, '10_computeTrust4TCRr')
+	      dir.create(plate_output_directory, recursive = TRUE, showWarnings = FALSE)
+	      write.csv( erroneoous_df, 
+		         file = file.path( plate_output_directory, "Erroneous_Barcode_Trust4_Isotype.csv"),
+		         row.names= FALSE,
+		         quote = FALSE)
+	      
+	      # Extract only the wells from the originel well ID
+	      result_df = result_df[ which( result_df[ , COLUMN_HEADER_CELL_ID] %in% intersect( result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)), ]
+	    }
+	    
+	    # Creation of a WellID column containing the well id assigned to the barcode (for plate plots)
+	    result_df[COLUMN_HEADER_WELL_ID] = CELL_BARCODE_WELL_DF$WellID[match(result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)]
+	    # Creation of a dataframe containing all results for each plate
+	    all_isotype_class_tcr = rbind(all_isotype_class_tcr, result_df)
     }
-    # Create a dataframe to associate each class with its cell_id
-    result_df <- data.frame(cell_id = cell_id_vect,
-                            c_call_class = result_vect)
-    
-    # Add the plate to the dataframe, to add it to the main dataframe (all_isotype_class)
-    result_df[ , COLUMN_HEADER_PLATE_NAME] = plate_name
-    
-    # If there is a difference between the barcodes in TRUST4 and the barcode file supplied, they are accumulated.
-    erroneous_barcodes = setdiff( result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)
-    
-    # If erroneous_barcodes is greater than 0, then warning (because there are barcodes in trust4 not found in the supplied bacrode file).
-    if (length(erroneous_barcodes) > 0){
-      
-      # Print the warning on the discripency between the lists of barcodes
-      warning(paste("For plate", plate_name, ", there is a discripency between the list of Well Barcode in the TRUST4 results and the list of Well Barcode from the provider. Some barcodes present in the TRUST4 results are not found in the provided cell barcode file.\n Successive analysis will ignore barcodes outside the original list of well barcodes. \n ", length( erroneous_barcodes), " barcodes not found"))
-      
-      # Extract the erroneous wells to export them to file for analysis
-      erroneoous_df = result_df[ which( result_df[ , COLUMN_HEADER_CELL_ID] %in% erroneous_barcodes), ]
-      plate_output_directory <- file.path(PATH_ANALYSIS_OUTPUT, plate_name, '10_computeTrust4TCRr')
-      dir.create(plate_output_directory, recursive = TRUE, showWarnings = FALSE)
-      write.csv( erroneoous_df, 
-                 file = file.path( plate_output_directory, "Erroneous_Barcode_Trust4_Isotype.csv"),
-                 row.names= FALSE,
-                 quote = FALSE)
-      
-      # Extract only the wells from the originel well ID
-      result_df = result_df[ which( result_df[ , COLUMN_HEADER_CELL_ID] %in% intersect( result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)), ]
-    }
-    
-    # Creation of a WellID column containing the well id assigned to the barcode (for plate plots)
-    result_df[COLUMN_HEADER_WELL_ID] = CELL_BARCODE_WELL_DF$WellID[match(result_df[[COLUMN_HEADER_CELL_ID]], CELL_BARCODE_WELL_DF$BarcodeSequence)]
-    # Creation of a dataframe containing all results for each plate
-    all_isotype_class_tcr = rbind(all_isotype_class_tcr, result_df)
-    
   }
+
   
   # ##################################################
   # ## 2. General graphics of all Isotype plates #####

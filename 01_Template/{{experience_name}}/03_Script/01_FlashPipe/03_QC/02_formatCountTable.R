@@ -332,8 +332,9 @@ FINAL_SEURAT_OBJECT = CreateSeuratObject( df_ARN_object_seurat, project = EXPERI
                                           min.cells = 0, min.features = 0, names.field = 1,
                                           names.delim = "_", meta.data = DATAFRAME_FOR_METADATA_SEURAT)
 
+# Save the seurat object to RDS file
 PATH_DIRECTORY_ANALYSIS <- file.path(PATH_FLASHPIPE_OUTPUT, '04_Analysis')
-# Registers the seurat object.
+dir.create( PATH_DIRECTORY_ANALYSIS, recursive = TRUE, showWarnings = FALSE)
 saveRDS( FINAL_SEURAT_OBJECT, file = file.path( PATH_DIRECTORY_ANALYSIS, "complete_seurat_object.RDS"))
 
 # Environment cleanup: removes temporary objects
